@@ -11,10 +11,10 @@ interface Product {
   title: string;
   price: number | string;
   description: string;
-  imageUrl: string;
+  images: string[];
   type: string;
   subCategory: string;
-  items?: string[]; // Note: If you want to use the list feature, you may need to add it here
+  flowerCount?: string | number;
   visible?: boolean;
 }
 
@@ -24,29 +24,41 @@ export default function AdminDashboard() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const subCats = ["men", "women", "children", "father", "mother", "new born"];
-  
+  const getSubCategories = () => {
+    if (activeTab === "flower") return [ "wedding", "shimigilina", "birthday", "anniversery", "graduation"];
+    if (activeTab === "decoration") return [ "birthday", "shimigilina", "nika", "wedding", "babtaizm", "graduation"];
+    return ["men", "women", "children", "father", "mother", "new born"];
+  };
+
   const initialFormState: Omit<Product, 'id'> = { 
-    title: "", 
-    price: "", 
-    description: "", 
-    imageUrl: "", 
-    type: activeTab, 
-    subCategory: "men" 
+    title: "", price: "", description: "", 
+    images: [], 
+    type: activeTab, subCategory: "all", flowerCount: "" 
   };
   
   const [product, setProduct] = useState<Omit<Product, 'id'>>(initialFormState);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setProduct(prev => ({ ...prev, type: activeTab }));
+    setProduct(prev => ({ ...prev, type: activeTab, subCategory: "all" }));
     fetchProducts();
   }, [activeTab]);
 
   const fetchProducts = async () => {
     const q = query(collection(db, "products"), where("type", "==", activeTab));
     const snapshot = await getDocs(q);
-    setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+    setProducts(snapshot.docs.map(doc => {
+      const data = doc.data();
+      return { 
+          id: doc.id, 
+          ...data,
+          images: data.images || (data.imageUrl ? [data.imageUrl] : [])
+      } as Product;
+    }));
+  };
+
+  const removeImage = (index: number) => {
+    setProduct(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
   };
 
   const handleDelete = async (id: string) => {
@@ -57,13 +69,12 @@ export default function AdminDashboard() {
   };
 
   const toggleVisibility = async (id: string, currentVisible?: boolean) => {
-    const newVisibility = currentVisible === false ? true : false;
-    await updateDoc(doc(db, "products", id), { visible: newVisibility });
+    await updateDoc(doc(db, "products", id), { visible: !currentVisible });
     fetchProducts();
   };
 
   const handleEdit = (p: Product) => {
-    setProduct({ title: p.title, price: p.price, description: p.description, imageUrl: p.imageUrl, type: p.type, subCategory: p.subCategory });
+    setProduct({ ...p });
     setEditingId(p.id);
     setIsAdding(true);
   };
@@ -88,40 +99,94 @@ export default function AdminDashboard() {
 
       {isAdding ? (
         <form onSubmit={async (e) => {
-          e.preventDefault();
-          if (!product.imageUrl) return alert("Please upload an image!");
-          setLoading(true);
-          const productData = { ...product, price: Number(product.price) };
-          if (editingId) {
-            await updateDoc(doc(db, "products", editingId), productData);
-          } else {
-            await addDoc(collection(db, "products"), { ...productData, visible: true, createdAt: serverTimestamp() });
-          }
-          setProduct(initialFormState);
-          setEditingId(null);
-          setIsAdding(false);
-          fetchProducts();
-          setLoading(false);
-        }} className="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">{editingId ? "Edit Product" : "Add New Product"}</h2>
-          
-          <input className="w-full p-4 mb-4 border rounded-2xl text-gray-900 bg-gray-50" placeholder="Title" value={product.title} onChange={(e) => setProduct({...product, title: e.target.value})} required />
-          
-          <select className="w-full p-4 mb-4 border rounded-2xl text-gray-900 bg-gray-50" value={product.subCategory} onChange={(e) => setProduct({...product, subCategory: e.target.value})}>
-             {subCats.map(cat => <option key={cat} value={cat}>{cat.toUpperCase()}</option>)}
-          </select>
-          
-          <input className="w-full p-4 mb-4 border rounded-2xl text-gray-900 bg-gray-50" type="number" placeholder="Price" value={product.price} onChange={(e) => setProduct({...product, price: e.target.value})} required />
-          
-          {/* DESCRIPTION FIELD ADDED */}
-          <textarea className="w-full p-4 mb-4 border rounded-2xl text-gray-900 bg-gray-50 h-32" placeholder="Description" value={product.description} onChange={(e) => setProduct({...product, description: e.target.value})} />
-          
-          <div className="mb-6">
-             {product.imageUrl ? <img src={product.imageUrl} className="h-40 w-full object-cover rounded-2xl mb-2" /> : 
-               <CldUploadWidget uploadPreset="kido_uploads" onSuccess={(res: any) => setProduct({...product, imageUrl: res.info.secure_url})}>
-                 {({ open }) => <button type="button" onClick={() => open()} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold">Upload Image</button>}
-               </CldUploadWidget>}
+  e.preventDefault();
+  if (product.images.length === 0) return alert("Please upload at least one image!");
+  setLoading(true);
+  const productData = { ...product, price: Number(product.price) };
+  if (editingId) {
+    await updateDoc(doc(db, "products", editingId), productData);
+  } else {
+    await addDoc(collection(db, "products"), { ...productData, visible: true, createdAt: serverTimestamp() });
+  }
+  setProduct(initialFormState);
+  setEditingId(null);
+  setIsAdding(false);
+  fetchProducts();
+  setLoading(false);
+}} className="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+  
+  <h2 className="text-2xl font-bold mb-6 text-gray-900">{editingId ? "Edit" : "Add"} {activeTab.toUpperCase()}</h2>
+  
+  {/* Updated inputs: text-gray-900 (darker text), placeholder-gray-500 (more visible placeholders) */}
+  <input 
+    className="w-full p-4 mb-4 border-2 border-gray-200 rounded-2xl bg-white text-gray-900 font-medium placeholder-gray-500 focus:border-[#6ab04c] outline-none" 
+    placeholder="Title" 
+    value={product.title} 
+    onChange={(e) => setProduct({...product, title: e.target.value})} 
+    required 
+  />
+  
+  <select 
+    className="w-full p-4 mb-4 border-2 border-gray-200 rounded-2xl bg-white text-gray-900 font-medium focus:border-[#6ab04c] outline-none" 
+    value={product.subCategory} 
+    onChange={(e) => setProduct({...product, subCategory: e.target.value})}
+  >
+     {getSubCategories().map(cat => <option key={cat} value={cat}>{cat.toUpperCase()}</option>)}
+  </select>
+  
+  <input 
+    className="w-full p-4 mb-4 border-2 border-gray-200 rounded-2xl bg-white text-gray-900 font-medium placeholder-gray-500 focus:border-[#6ab04c] outline-none" 
+    type="number" 
+    placeholder="Price" 
+    value={product.price} 
+    onChange={(e) => setProduct({...product, price: e.target.value})} 
+    required 
+  />
+  
+  {activeTab === "flower" && (
+    <input 
+      className="w-full p-4 mb-4 border-2 border-gray-200 rounded-2xl bg-white text-gray-900 font-medium placeholder-gray-500 focus:border-[#6ab04c] outline-none" 
+      placeholder="Number of Flowers" 
+      value={product.flowerCount} 
+      onChange={(e) => setProduct({...product, flowerCount: e.target.value})} 
+    />
+  )}
+
+  <textarea 
+    className="w-full p-4 mb-4 border-2 border-gray-200 rounded-2xl bg-white text-gray-900 font-medium placeholder-gray-500 h-32 focus:border-[#6ab04c] outline-none" 
+    placeholder="Description" 
+    value={product.description} 
+    onChange={(e) => setProduct({...product, description: e.target.value})} 
+  />
+  
+  <div className="mb-6">
+    <label className="block text-sm font-bold text-gray-800 mb-2">
+      Images ({product.images.length}/{activeTab === "surprise" ? "1" : "3"})
+    </label>
+  
+      <div className="flex gap-2 mb-2 flex-wrap">
+        {product.images.map((url, i) => (
+          <div key={i} className="relative w-20 h-20">
+            <img src={url} className="w-full h-full object-cover rounded-lg" />
+            <button type="button" onClick={() => removeImage(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs">✕</button>
           </div>
+        ))}
+      </div>
+
+      {/* Only show upload button if under the limit */}
+      {(activeTab === "surprise" ? product.images.length < 1 : product.images.length < 3) && (
+        <CldUploadWidget 
+          uploadPreset="kido_uploads" 
+          onSuccess={(res: any) => setProduct(prev => ({ ...prev, images: [...prev.images, res.info.secure_url] }))}
+        >
+          {({ open }) => (
+            <button type="button" onClick={() => open()} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold">
+              Upload Image {activeTab === "surprise" ? "" : product.images.length + 1}
+            </button>
+          )}
+        </CldUploadWidget>
+      )}
+    </div>
           
           <button type="submit" className="w-full py-4 bg-[#6ab04c] text-white rounded-2xl font-bold text-lg">{loading ? "Saving..." : "Save Product"}</button>
           <button type="button" onClick={() => { setIsAdding(false); setEditingId(null); }} className="w-full mt-2 py-2 text-gray-500">Cancel</button>
@@ -131,7 +196,7 @@ export default function AdminDashboard() {
           {products.map((p) => (
             <div key={p.id} className={`bg-white rounded-3xl p-4 shadow-sm border ${p.visible === false ? "opacity-50" : ""}`}>
               <div className="relative h-52 mb-4">
-                <img src={p.imageUrl} className="w-full h-full object-cover rounded-2xl" />
+                <img src={p.images[0]} className="w-full h-full object-cover rounded-2xl" />
                 <div className="absolute top-2 right-2 flex gap-1">
                   <button onClick={() => toggleVisibility(p.id, p.visible)} className="p-2 bg-white rounded-full shadow"><EyeOff size={16} /></button>
                   <button onClick={() => handleEdit(p)} className="p-2 bg-white rounded-full shadow text-blue-600"><Pencil size={16} /></button>
@@ -139,7 +204,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <h3 className="font-bold text-lg">{p.title}</h3>
-              <p className="text-sm text-gray-500 mb-2 line-clamp-2">{p.description}</p>
+              {p.flowerCount && <p className="text-[#6ab04c] font-semibold text-sm">{p.flowerCount} Flowers</p>}
               <p className="text-[#6ab04c] font-black text-xl">{Number(p.price).toLocaleString()} ETB</p>
             </div>
           ))}
