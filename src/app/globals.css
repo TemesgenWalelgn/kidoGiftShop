@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
+/* ===== ROOT COLORS ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --brand-gold: #f39c12;    /* Vibrant Gold */
+    --brand-green: #2f794e;   /* Emerald Green */
+    --brand-light: #ffffff;   /* Pure White */
+    --brand-teal: #16a085;    /* Teal */
+    --soft-green: #f0fdf4;    /* Very Light Green tint */
+    --text-dark: #1a1a1a;     /* subTabBg Color */
+    --brand-bg: #e3e7eb;      /* Background Color */
 }
 
 @theme inline {
