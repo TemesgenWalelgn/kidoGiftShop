@@ -21,12 +21,16 @@ export default function UserPage() {
   const [activeSub, setActiveSub] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const translations = {
     am: {
       brandName: "ኪዶ ስጦታዎች እና አበቦች",
       tagline: "ለልዩ ቀናትዎ የሚያምሩ አበቦች እና የስጦታ ፓኬጆች",
       footerAbout: "ኪዶ ስጦታ እና አበባ ማቅረቢያ - ፍቅርን በስጦታ እና በ አበባ ይግለጹ።",
+      collectionTitle: "የእኛ ስብስቦች",
+      orderButton: "ይዘዙ",
+      orderSuccess: "ትዕዛዝ ተልኳል! ✅",
       footerContact: "አግኙን",
       footerRights: "መብቱ በህግ የተጠበቀ ነው።",
       tabs: { surprise: "የስጦታ ጥቅል", flower: "አበቦች", decoration: "አስጌጥ", all: "ሁሉም" },
@@ -34,12 +38,22 @@ export default function UserPage() {
         flower: { all: "ሁሉም", wedding: "ሰርግ", shimigilina: "ሽምግልና", birthday: "ልደት", anniversery: "የአመት በዓል", graduation: "ምረቃ" },
         decoration: { all: "ሁሉም", birthday: "ልደት", shimigilina: "ሽምግልና", nika: "ኒካህ", wedding: "ሰርግ", babtaizm: "ጥምቀት", graduation: "ምረቃ" },
         surprise: { all: "ሁሉም", men: "ወንዶች", women: "ሴቶች", children: "ህፃናት", father: "አባት", mother: "እናት", "new born": "አዲስ የተወለደ" }
-      }
+      },
+      orderPhrases: {
+        surprise: "ዌብሳይታችሁ ላይ ካየሁት አስገራሚ ፓኬጅ ውስጥ ይሄንን ማዘዝ እፈልጋለው",
+        flower: "ዌብሳይታችሁ ላይ ካየሁት የአበባ እቅፍ ውስጥ ይሄንን ማዘዝ እፈልጋለው",
+        decoration: "ዌብሳይታችሁ ላይ ካየሁት የማስጌጫ ፓኬጅ ውስጥ ይሄንን ማዘዝ እፈልጋለው",
+        default: "ዌብሳይታችሁ ላይ ካየሁት ፓኬጅ ውስጥ ይሄንን ማዘዝ እፈልጋለው"
+      },
+      callToAction: "አመሰግናለው"
     },
     en: {
       brandName: "Kido Gifts & Flowers",
       tagline: "Beautiful flowers and custom surprise packages for your special moments",
       footerAbout: "Kido Gifts & Flower Shop - Express your love through gifts and flowers.",
+      collectionTitle: "Our Collection",
+      orderButton: "Order Now",
+      orderSuccess: "Order Sent! ✅",
       footerContact: "Contact Us",
       footerRights: "All rights reserved.",
       tabs: { surprise: "Surprise", flower: "Flowers", decoration: "Decoration", all: "All" },
@@ -47,12 +61,22 @@ export default function UserPage() {
         flower: { all: "All", wedding: "Wedding", shimigilina: "Engagement", birthday: "Birthday", anniversery: "Anniversary", graduation: "Graduation" },
         decoration: { all: "All", birthday: "Birthday", shimigilina: "Engagement", nika: "Nika", wedding: "Wedding", babtaizm: "Baptism", graduation: "Graduation" },
         surprise: { all: "All", men: "Men", women: "Women", children: "Children", father: "Father", mother: "Mother", "new born": "New Born" }
-      }
+      },
+      orderPhrases: {
+        surprise: "Hello, I would like to order this surprise package from your website:",
+        flower: "Hello, I would like to order this flower bouquet from your website:",
+        decoration: "Hello, I would like to order this decoration package from your website:",
+        default: "Hello, I would like to order this package from your website:"
+      },
+      callToAction: "Thank you"
     },
     om: {
       brandName: "Kennaafi Abaaroowwan Kido",
       tagline: "Abaaroowwan miidhagoo fi qophii kennaa addaa guyyoota keessaniif",
       footerAbout: "Suuqii Kennaa fi Abaarsaa Kido - Jaalala keessan kennaadhaan ibsaa.",
+      collectionTitle: "Walitti Qabama Keenya",
+      orderButton: "Ajajaa",
+      orderSuccess: "Ajajni Ergame! ✅",
       footerContact: "Nu Quunnamaa",
       footerRights: "Mirgi hunduu eegamaadha.",
       tabs: { surprise: "Kennaa", flower: "Abaaroo", decoration: "Miidhagina", all: "Hunda" },
@@ -60,7 +84,14 @@ export default function UserPage() {
         flower: { all: "Hunda", wedding: "Guyyaa Gaa'elaa", shimigilina: "Kadhannaa", birthday: "Guyyaa Dhalootaa", anniversery: "Ayyaana Waggaa", graduation: "Eebbifa" },
         decoration: { all: "Hunda", birthday: "Guyyaa Dhalootaa", shimigilina: "Kadhannaa", nika: "Nika", wedding: "Guyyaa Gaa'elaa", babtaizm: "Cuuphaa", graduation: "Eebbifa" },
         surprise: { all: "Hunda", men: "Dhiira", women: "Dubara", children: "Ijoollee", father: "Abbaa", mother: "Haadha", "new born": "Mucaa Haarawa" }
-      }
+      },
+      orderPhrases: {
+        surprise: "Marsariitii keessan irraa paakajeetii dinqisiisaa kana ajajuu barbaada:",
+        flower: "Marsariitii keessan irraa abaaboo kana ajajuu barbaada:",
+        decoration: "Marsariitii keessan irraa paakajeetii miidhaginaa kana ajajuu barbaada:",
+        default: "Marsariitii keessan irraa kana ajajuu barbaada:"
+      },
+      callToAction: "Galatoomaa"
     }
   };
 
@@ -84,11 +115,41 @@ export default function UserPage() {
       } as Product));
       
       data = data.filter(p => p.visible !== false);
-      if (activeSub !== "all") data = data.filter(p => p.subCategory === activeSub);
+      
+      // When "all" is selected, show all products across categories for this tab type without subCategory filtering
+      if (activeSub !== "all") {
+        data = data.filter(p => p.subCategory === activeSub);
+      }
+      
       setProducts(data);
     });
     return () => unsubscribe();
   }, [activeTab, activeSub]);
+
+  const handleOrder = (p: Product, index: number) => {
+    setLoadingId(p.id);
+
+    const titlePrefix = p.type === "flower" ? "Flower" : "Package";
+    const packageName = `${titlePrefix} ${index + 1} (${p.subCategory.toUpperCase()} - ${Number(p.price).toLocaleString()} ETB)`;
+    const telegramUsername = 'kido1222';
+
+    const categoryKey = p.type?.toLowerCase() || 'default';
+    const currentPhrases = translations[lang].orderPhrases as Record<string, string>;
+    const customPhrase = currentPhrases[categoryKey] || currentPhrases.default;
+    const callToAction = translations[lang].callToAction;
+    
+    const descText = p.description[lang] || p.description.am || p.description.en;
+    
+    const message = `ሰላም @${telegramUsername}፣\n\n${customPhrase}:\n\n*${packageName}*\n${descText}\n\n${callToAction}`;
+    const encodedMessage = encodeURIComponent(message);
+    const telegramUrl = `https://t.me/${telegramUsername}?text=${encodedMessage}`;
+
+    setTimeout(() => {
+      setLoadingId(null);
+    }, 2000);
+
+    window.open(telegramUrl, '_blank');
+  };
 
   return (
     <div className="min-h-screen bg-[var(--brand-bg)] flex flex-col justify-between">
@@ -126,7 +187,7 @@ export default function UserPage() {
       <main className="flex-grow p-4 md:p-6 lg:p-10 max-w-7xl mx-auto w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-gold)] to-[var(--brand-green)]">
-            Our Collection
+            {translations[lang].collectionTitle}
           </h1>
         </div>
 
@@ -147,52 +208,52 @@ export default function UserPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {products.map((p, index) => (
-            <div key={p.id} className="bg-[var(--brand-light)] rounded-3xl p-3 md:p-4 shadow-sm border border-gray-100 flex flex-row items-stretch gap-4 hover:shadow-md transition-shadow">
-              <div onClick={() => setSelectedProduct(p)} className="w-[60%] aspect-[3/3] overflow-hidden rounded-2xl flex-shrink-0 cursor-pointer group">
-                <img src={p.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={`Package ${index + 1}`} />
-              </div>
-
-              <div className="w-1/2 flex flex-col justify-between py-2 px-1">
-                <div>
-                  <div className="inline-block bg-gray-100 px-2 py-0.5 rounded-md mb-2">
-                    <span className="text-[10px] md:text-xs font-black text-gray-600 uppercase tracking-widest">
-                      Package {index + 1}
-                    </span>
-                  </div>
-
-                  <p className="text-xl md:text-2xl font-black text-[var(--brand-green)] mb-2">
-                    {Number(p.price).toLocaleString()} ETB
-                  </p>
-
-                  <div className="text-[11px] md:text-sm text-gray-500 mb-4 leading-relaxed">
-                    <p className="line-clamp-4 italic font-medium">
-                      Includes: {p.description[lang]}
-                    </p>
-                  </div>
+          {products.map((p, index) => {
+            const titlePrefix = p.type === "flower" ? "Flower" : "Package";
+            return (
+              <div key={p.id} className="bg-[var(--brand-light)] rounded-3xl p-3 md:p-4 shadow-sm border border-gray-100 flex flex-row items-stretch gap-4 hover:shadow-md transition-shadow">
+                <div onClick={() => setSelectedProduct(p)} className="w-[60%] aspect-[3/3] overflow-hidden rounded-2xl flex-shrink-0 cursor-pointer group">
+                  <img src={p.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={`${titlePrefix} ${index + 1}`} />
                 </div>
 
-                <button 
-                  onClick={() => {
-                    const message = `*New Order Request*%0A%0A` +
-                                    `*Package:* Package ${index + 1}%0A` +
-                                    `*Category:* ${p.subCategory.toUpperCase()}%0A` +
-                                    `*Price:* ${Number(p.price).toLocaleString()} ETB%0A%0A` +
-                                    `*Includes:*%0A${p.description[lang]}`;
-                    
-                    window.open(`https://t.me/temesgenwalelign?text=${encodeURIComponent(message)}`, '_blank');
-                  }} 
-                  className="w-full py-3 bg-[var(--brand-green)] text-white text-xs md:text-sm font-extrabold rounded-xl hover:opacity-95 transition-all shadow-lg active:scale-[0.97]"
-                >
-                  Order on Telegram
-                </button>
+                <div className="w-1/2 flex flex-col justify-between py-2 px-1">
+                  <div>
+                    <div className="inline-block bg-gray-100 px-2 py-0.5 rounded-md mb-2">
+                      <span className="text-[10px] md:text-xs font-black text-gray-600 uppercase tracking-widest">
+                        {titlePrefix} {index + 1}
+                      </span>
+                    </div>
+
+                    <p className="text-xl md:text-2xl font-black text-[var(--brand-green)] mb-2">
+                      {Number(p.price).toLocaleString()} ETB
+                    </p>
+
+                    <div className="text-[11px] md:text-sm text-gray-500 mb-4 leading-relaxed">
+                      <p className="line-clamp-4 italic font-medium">
+                        Includes: {p.description[lang]}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleOrder(p, index)} 
+                    disabled={loadingId === p.id}
+                    className={`w-full py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all shadow-lg active:scale-[0.97] ${
+                      loadingId === p.id 
+                        ? "bg-amber-500 text-white cursor-not-allowed" 
+                        : "bg-[var(--brand-green)] text-white hover:opacity-95"
+                    }`}
+                  >
+                    {loadingId === p.id ? translations[lang].orderSuccess : translations[lang].orderButton}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
 
-            {/* ===== CLASSIC FOOTER ===== */}
+      {/* ===== CLASSIC FOOTER ===== */}
       <footer className="bg-[var(--text-dark)] text-white mt-12 py-10 px-4 md:px-6 lg:px-10 border-t border-gray-800">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           
@@ -246,7 +307,7 @@ export default function UserPage() {
                 </svg>
               </a>
             </div>
-            <span className="text-xs md:text-sm font-semibold text-gray-300 mb-1 flex items-center justify-center md:justify-end gap-1.5">
+            <span className="text-xs md:text-sm font-semibold text-gray-300 mb-1 flex items-center justify-center md:justify-end gap-1.5 mt-4">
               {translations[lang].footerContact}: 
               <a href="tel:+251951161632" className="hover:text-[var(--brand-gold)] underline flex items-center gap-1">
                 <svg className="w-3.5 h-3.5 fill-current text-[var(--brand-gold)]" viewBox="0 0 24 24">
@@ -256,36 +317,35 @@ export default function UserPage() {
               </a>
             </span>
           </div>
+
           {/* Contact, Copyright & Developer Attribution */}
           <div className="flex flex-col items-center md:items-end justify-center text-center md:text-right">
-            
-            
             {/* Developer Credit Link */}
-              <p className="text-xs text-gray-400 mb-3 flex items-center justify-center md:justify-end gap-1.5">
-                Developed by{" "}
-                <a 
-                  href="https://t.me/temesgenwalelign" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[var(--brand-gold)] font-bold hover:underline"
-                >
-                  Temesgen Walelgn
-                </a>
-                <span className="text-gray-600">|</span>
-                <a 
-                  href="tel:+251993370491" 
-                  className="inline-flex items-center gap-1 text-gray-300 hover:text-[var(--brand-gold)] transition-colors"
-                  title="Call Developer"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current text-[var(--brand-gold)]" viewBox="0 0 24 24">
-                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                  </svg>
-                  <span className="text-xs font-semibold">+251 993 370 491</span>
-                </a>
-              </p>
-              <p className="text-xs text-gray-500">
-                © {new Date().getFullYear()} {translations[lang].brandName}. {translations[lang].footerRights}
-              </p>
+            <p className="text-xs text-gray-400 mb-3 flex items-center justify-center md:justify-end gap-1.5">
+              Developed by{" "}
+              <a 
+                href="https://t.me/temesgenwalelign" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[var(--brand-gold)] font-bold hover:underline"
+              >
+                Temesgen Walelgn
+              </a>
+              <span className="text-gray-600">|</span>
+              <a 
+                href="tel:+251993370491" 
+                className="inline-flex items-center gap-1 text-gray-300 hover:text-[var(--brand-gold)] transition-colors"
+                title="Call Developer"
+              >
+                <svg className="w-3.5 h-3.5 fill-current text-[var(--brand-gold)]" viewBox="0 0 24 24">
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                </svg>
+                <span className="text-xs font-semibold">+251 993 370 491</span>
+              </a>
+            </p>
+            <p className="text-xs text-gray-500">
+              © {new Date().getFullYear()} {translations[lang].brandName}. {translations[lang].footerRights}
+            </p>
           </div>
 
         </div>

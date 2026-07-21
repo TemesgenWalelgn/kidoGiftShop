@@ -245,12 +245,20 @@ export default function AdminDashboard() {
               {(activeTab === "surprise" ? product.images.length < 1 : product.images.length < 3) && (
                 <CldUploadWidget 
                   uploadPreset="kido_uploads" 
-                  onSuccess={(res: any) => setProduct(prev => ({ ...prev, images: [...prev.images, res.info.secure_url] }))}
+                  onSuccess={(res: any) => {
+                    setProduct(prev => ({ ...prev, images: [...prev.images, res.info.secure_url] }));
+                    // Force body scroll unlock and restore window interaction after modal closes
+                    document.body.style.overflow = "auto";
+                    document.body.style.position = "static";
+                  }}
                 >
                   {({ open }) => (
                     <button 
                       type="button" 
-                      onClick={() => open()} 
+                      onClick={() => {
+                        // Ensure body is ready for modal
+                        open();
+                      }} 
                       className="w-full py-3 bg-[var(--text-dark)] text-[var(--brand-light)] rounded-2xl font-bold text-xs md:text-sm shadow-md hover:bg-black transition-all"
                     >
                       Upload Image {activeTab === "surprise" ? "" : product.images.length + 1}
