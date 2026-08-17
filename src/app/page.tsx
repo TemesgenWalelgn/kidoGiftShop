@@ -25,30 +25,30 @@ export default function UserPage() {
 
   const translations = {
     am: {
-      brandName: "ኪዶ ስጦታዎች እና አበቦች",
+      brandName: "ኪዶ አበባ እና ስጦታ መሸጫ",
       tagline: "ለልዩ ቀናትዎ የሚያምሩ አበቦች እና የስጦታ ፓኬጆች",
-      footerAbout: "ኪዶ ስጦታ እና አበባ ማቅረቢያ - ፍቅርን በስጦታ እና በ አበባ ይግለጹ።",
-      collectionTitle: "የእኛ ስብስቦች",
-      orderButton: "ይዘዙ",
+      footerAbout: "ኪዶ አበባ እና ስጦታ መሸጫ - ፍቅሮን በስጦታ እና በአበባ ይግለጹ።",
+      collectionTitle: "የአማራጮቻችንን ይመልከቱ",
+      orderButton: "አሁኑኑ ይዘዙ",
       orderSuccess: "ትዕዛዝ ተልኳል! ✅",
-      footerContact: "አግኙን",
+      footerContact: "እኛን ለማግኘት",
       footerRights: "መብቱ በህግ የተጠበቀ ነው።",
-      tabs: { surprise: "የስጦታ ጥቅል", flower: "አበቦች", decoration: "አስጌጥ", all: "ሁሉም" },
+      tabs: { surprise: "የሰርፕራይዝ ጥቅል", flower: "አበቦች", decoration: "የዲኮር ስራ"},
       subs: {
-        flower: { all: "ሁሉም", wedding: "ሰርግ", shimigilina: "ሽምግልና", birthday: "ልደት", anniversery: "የአመት በዓል", graduation: "ምረቃ" },
+        flower: { all: "ሁሉም", wedding: "ሰርግ", shimigilina: "ሽምግልና", birthday: "ልደት", anniversery: "አንቨርሰሪ በዓል", graduation: "ምረቃ" },
         decoration: { all: "ሁሉም", birthday: "ልደት", shimigilina: "ሽምግልና", nika: "ኒካህ", wedding: "ሰርግ", babtaizm: "ጥምቀት", graduation: "ምረቃ" },
-        surprise: { all: "ሁሉም", men: "ወንዶች", women: "ሴቶች", children: "ህፃናት", father: "አባት", mother: "እናት", "new born": "አዲስ የተወለደ" }
+        surprise: { all: "ሁሉም", men: "ለወንዶች", women: "ለሴቶች", children: "ለህፃናት", father: "ለአባት", mother: "ለእናት", "new born": "ለአራስ" }
       },
       orderPhrases: {
         surprise: "ዌብሳይታችሁ ላይ ካየሁት አስገራሚ ፓኬጅ ውስጥ ይሄንን ማዘዝ እፈልጋለው",
         flower: "ዌብሳይታችሁ ላይ ካየሁት የአበባ እቅፍ ውስጥ ይሄንን ማዘዝ እፈልጋለው",
-        decoration: "ዌብሳይታችሁ ላይ ካየሁት የማስጌጫ ፓኬጅ ውስጥ ይሄንን ማዘዝ እፈልጋለው",
+        decoration: "ዌብሳይታችሁ ላይ ካየሁት የዲኮር ውስጥ ይሄንን ማዘዝ እፈልጋለው",
         default: "ዌብሳይታችሁ ላይ ካየሁት ፓኬጅ ውስጥ ይሄንን ማዘዝ እፈልጋለው"
       },
       callToAction: "አመሰግናለው"
     },
     en: {
-      brandName: "Kido Gifts & Flowers",
+      brandName: "Kido Flowers & Gifts Shop",
       tagline: "Beautiful flowers and custom surprise packages for your special moments",
       footerAbout: "Kido Gifts & Flower Shop - Express your love through gifts and flowers.",
       collectionTitle: "Our Collection",
@@ -56,11 +56,11 @@ export default function UserPage() {
       orderSuccess: "Order Sent! ✅",
       footerContact: "Contact Us",
       footerRights: "All rights reserved.",
-      tabs: { surprise: "Surprise", flower: "Flowers", decoration: "Decoration", all: "All" },
+      tabs: { surprise: "Surprise pkg", flower: "Flowers", decoration: "Event Decor" },
       subs: {
-        flower: { all: "All", wedding: "Wedding", shimigilina: "Engagement", birthday: "Birthday", anniversery: "Anniversary", graduation: "Graduation" },
-        decoration: { all: "All", birthday: "Birthday", shimigilina: "Engagement", nika: "Nika", wedding: "Wedding", babtaizm: "Baptism", graduation: "Graduation" },
-        surprise: { all: "All", men: "Men", women: "Women", children: "Children", father: "Father", mother: "Mother", "new born": "New Born" }
+        flower: { all: "All", wedding: "For Wedding", shimigilina: "For Engagement", birthday: "For Birthday", anniversery: "For Anniversary", graduation: "For Graduation" },
+        decoration: { all: "All", birthday: "For Birthday", shimigilina: "For Engagement", nika: "For Nika", wedding: "For Wedding", babtaizm: "For Baptism", graduation: "For Graduation" },
+        surprise: { all: "All", men: "For Men", women: "For Women", children: "For Children", father: "For Father", mother: "For Mother", "new born": "New Born" }
       },
       orderPhrases: {
         surprise: "Hello, I would like to order this surprise package from your website:",
@@ -79,7 +79,7 @@ export default function UserPage() {
       orderSuccess: "Ajajni Ergame! ✅",
       footerContact: "Nu Quunnamaa",
       footerRights: "Mirgi hunduu eegamaadha.",
-      tabs: { surprise: "Kennaa", flower: "Abaaroo", decoration: "Miidhagina", all: "Hunda" },
+      tabs: { surprise: "surprisee", flower: "Abaaroo", decoration: "decoraa", },
       subs: {
         flower: { all: "Hunda", wedding: "Guyyaa Gaa'elaa", shimigilina: "Kadhannaa", birthday: "Guyyaa Dhalootaa", anniversery: "Ayyaana Waggaa", graduation: "Eebbifa" },
         decoration: { all: "Hunda", birthday: "Guyyaa Dhalootaa", shimigilina: "Kadhannaa", nika: "Nika", wedding: "Guyyaa Gaa'elaa", babtaizm: "Cuuphaa", graduation: "Eebbifa" },
