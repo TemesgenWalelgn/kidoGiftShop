@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
 
 interface Product {
   id: string;
@@ -15,6 +15,49 @@ interface Product {
   visible?: boolean;
 }
 
+// ===== TEMPORARY SUBCATEGORY CONFIGURATION =====
+interface TempSubConfig {
+  enabled: boolean;
+  name: {
+    am: string;
+    en: string;
+    om: string;
+  };
+}
+
+interface TempConfigs {
+  surprise: TempSubConfig;
+  flower: TempSubConfig;
+  decoration: TempSubConfig;
+}
+
+const defaultTempConfigs: TempConfigs = {
+  surprise: {
+    enabled: false,
+    name: {
+      am: "",
+      en: "",
+      om: "",
+    },
+  },
+  flower: {
+    enabled: false,
+    name: {
+      am: "",
+      en: "",
+      om: "",
+    },
+  },
+  decoration: {
+    enabled: false,
+    name: {
+      am: "",
+      en: "",
+      om: "",
+    },
+  },
+};
+
 export default function UserPage() {
   const [lang, setLang] = useState<'am' | 'en' | 'om'>('am');
   const [activeTab, setActiveTab] = useState("surprise");
@@ -22,6 +65,9 @@ export default function UserPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  // ===== TEMPORARY SUBCATEGORY STATE =====
+  const [tempConfigs, setTempConfigs] = useState<TempConfigs>(defaultTempConfigs);
 
   const translations = {
     am: {
@@ -79,7 +125,7 @@ export default function UserPage() {
       orderSuccess: "Ajajni Ergame! ✅",
       footerContact: "Nu Quunnamaa",
       footerRights: "Mirgi hunduu eegamaadha.",
-      tabs: { surprise: "surprisee", flower: "Abaaroo", decoration: "decoraa", },
+      tabs: { surprise: "surprisee", flower: "Abaaroo", decoration: "decoraa", all: "Hunda" },
       subs: {
         flower: { all: "Hunda", wedding: "Guyyaa Gaa'elaa", shimigilina: "Kadhannaa", birthday: "Guyyaa Dhalootaa", anniversery: "Ayyaana Waggaa", graduation: "Eebbifa" },
         decoration: { all: "Hunda", birthday: "Guyyaa Dhalootaa", shimigilina: "Kadhannaa", nika: "Nika", wedding: "Guyyaa Gaa'elaa", babtaizm: "Cuuphaa", graduation: "Eebbifa" },
@@ -95,13 +141,114 @@ export default function UserPage() {
     }
   };
 
+  // ============================================================
+  // TEMPORARY SUBCATEGORY CONFIGURATION
+  // Reads the document:
+  // settings/tempSubTabs
+  //
+  // This updates automatically when Admin enables/disables
+  // the temporary package.
+  // ============================================================
+
+  useEffect(() => {
+    const tempSubTabsRef = doc(db, "settings", "tempSubTabs");
+
+    const unsubscribe = onSnapshot(
+      tempSubTabsRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setTempConfigs(defaultTempConfigs);
+          return;
+        }
+
+        const data = snapshot.data();
+
+        setTempConfigs({
+          surprise: {
+            enabled: data.surprise?.enabled ?? false,
+            name: {
+              am: data.surprise?.name?.am ?? "",
+              en: data.surprise?.name?.en ?? "",
+              om: data.surprise?.name?.om ?? "",
+            },
+          },
+          flower: {
+            enabled: data.flower?.enabled ?? false,
+            name: {
+              am: data.flower?.name?.am ?? "",
+              en: data.flower?.name?.en ?? "",
+              om: data.flower?.name?.om ?? "",
+            },
+          },
+          decoration: {
+            enabled: data.decoration?.enabled ?? false,
+            name: {
+              am: data.decoration?.name?.am ?? "",
+              en: data.decoration?.name?.en ?? "",
+              om: data.decoration?.name?.om ?? "",
+            },
+          },
+        });
+      },
+      (error) => {
+        console.error("Error loading temporary subcategory settings:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // ============================================================
+  // GET SUBCATEGORIES
+  // ============================================================
+
   const getSubCategories = () => {
-    if (activeTab === "flower") return ["all", "wedding", "shimigilina", "birthday", "anniversery", "graduation"];
-    if (activeTab === "decoration") return ["all", "birthday", "shimigilina", "nika", "wedding", "babtaizm", "graduation"];
-    return ["all", "men", "women", "children", "father", "mother", "new born"];
+    let categories: string[];
+
+    if (activeTab === "flower") {
+      categories = ["all", "wedding", "shimigilina", "birthday", "anniversery", "graduation"];
+    } else if (activeTab === "decoration") {
+      categories = ["all", "birthday", "shimigilina", "nika", "wedding", "babtaizm", "graduation"];
+    } else {
+      categories = ["all", "men", "women", "children", "father", "mother", "new born"];
+    }
+
+    // Add temporary package ONLY when Admin enabled it
+    if (tempConfigs[activeTab as keyof TempConfigs]?.enabled) {
+      categories.push("temp_package");
+    }
+
+    return categories;
+  };
+
+  // ============================================================
+  // GET SUBCATEGORY DISPLAY NAME
+  // ============================================================
+
+  const getSubCategoryName = (sub: string) => {
+    // Temporary package name comes from Admin settings
+    if (sub === "temp_package") {
+      return tempConfigs[activeTab as keyof TempConfigs]?.name?.[lang] || "Special";
+    }
+
+    return (translations[lang].subs as any)[activeTab][sub];
   };
 
   useEffect(() => { setActiveSub("all"); }, [activeTab]);
+
+  // ============================================================
+  // If Admin disables the temporary package while the user is
+  // currently viewing it, return the user to "all".
+  // ============================================================
+
+  useEffect(() => {
+    const tempEnabled =
+      tempConfigs[activeTab as keyof TempConfigs]?.enabled;
+
+    if (activeSub === "temp_package" && !tempEnabled) {
+      setActiveSub("all");
+    }
+  }, [tempConfigs, activeTab, activeSub]);
 
   useEffect(() => {
     setProducts([]); 
@@ -130,7 +277,15 @@ export default function UserPage() {
     setLoadingId(p.id);
 
     const titlePrefix = p.type === "flower" ? "Flower" : "Package";
-    const packageName = `${titlePrefix} ${index + 1} (${p.subCategory.toUpperCase()} - ${Number(p.price).toLocaleString()} ETB)`;
+
+    // For a temporary package, use the temporary category name
+    // instead of displaying "TEMP_PACKAGE" to the customer.
+    const subCategoryName =
+      p.subCategory === "temp_package"
+        ? tempConfigs[p.type as keyof TempConfigs]?.name?.[lang] || "Special"
+        : p.subCategory;
+
+    const packageName = `${titlePrefix} ${index + 1} (${subCategoryName.toUpperCase()} - ${Number(p.price).toLocaleString()} ETB)`;
     const telegramUsername = 'kido1222';
 
     const categoryKey = p.type?.toLowerCase() || 'default';
@@ -202,7 +357,7 @@ export default function UserPage() {
         <div className="flex justify-center flex-wrap gap-2 mb-8">
           {getSubCategories().map(sub => (
             <button key={sub} onClick={() => setActiveSub(sub)} className={`px-4 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all ${activeSub === sub ? "bg-[var(--text-dark)] text-white shadow-md" : "bg-[var(--brand-light)] text-gray-500 hover:bg-gray-100"}`}>
-              {(translations[lang].subs as any)[activeTab][sub]}
+              {getSubCategoryName(sub)}
             </button>
           ))}
         </div>
@@ -290,7 +445,7 @@ export default function UserPage() {
                 title="Instagram"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-4.771-4.919-4.92-.058-1.28-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259.014-3.667.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                 </svg>
               </a>
 
@@ -307,6 +462,7 @@ export default function UserPage() {
                 </svg>
               </a>
             </div>
+
             <span className="text-xs md:text-sm font-semibold text-gray-300 mb-1 flex items-center justify-center md:justify-end gap-1.5 mt-4">
               {translations[lang].footerContact}: 
               <a href="tel:+251951161632" className="hover:text-[var(--brand-gold)] underline flex items-center gap-1">
