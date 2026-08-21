@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, getDoc, setDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, onSnapshot } from "firebase/firestore";
 import { CldUploadWidget } from "next-cloudinary";
 import { Pencil, Trash2, Eye, EyeOff, Settings } from "lucide-react";
 
@@ -17,13 +17,13 @@ interface Product {
   visible?: boolean;
 }
 
-interface TempSubConfig {
+interface TempSubCategory {
+  id: string;
+  type: string;
   enabled: boolean;
+  order: number;
   name: { am: string; en: string; om: string };
-}
-
-interface AllConfigs {
-  [mainTab: string]: TempSubConfig;
+  createdAt?: any;
 }
 
 export default function AdminDashboard() {
@@ -34,55 +34,153 @@ export default function AdminDashboard() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
-  // Temporary Sub-tab Configuration State
+  // Temporary Subcategory Configuration State
+  const [tempSubCategories, setTempSubCategories] = useState<TempSubCategory[]>([]);
   const [showConfigModal, setShowConfigModal] = useState(false);
-  const [tempConfigs, setTempConfigs] = useState<AllConfigs>({
-    surprise: { enabled: false, name: { am: "ልዩ በዓል", en: "Special Holiday", om: "Ayyaana Addaa" } },
-    flower: { enabled: false, name: { am: "ልዩ በዓል", en: "Special Holiday", om: "Ayyaana Addaa" } },
-    decoration: { enabled: false, name: { am: "ልዩ በዓል", en: "Special Holiday", om: "Ayyaana Addaa" } }
+  const [editingTempId, setEditingTempId] = useState<string | null>(null);
+  const [tempForm, setTempForm] = useState({
+    type: "surprise",
+    enabled: true,
+    name: { am: "", en: "", om: "" }
   });
 
-  const initialFormState: Omit<Product, 'id'> = { 
+  const getInitialFormState = (): Omit<Product, 'id'> => ({ 
     price: "", 
     description: { am: "", en: "", om: "" }, 
     images: [], 
     type: activeTab, 
-    subCategory: "all", 
+    subCategory: activeSub !== "all" ? activeSub : "", 
     flowerCount: "" 
-  };
+  });
   
-  const [product, setProduct] = useState<Omit<Product, 'id'>>(initialFormState);
+  const [product, setProduct] = useState<Omit<Product, 'id'>>(getInitialFormState());
 
-  // Fetch configs from Firebase on mount
+  // Listen to temporary subcategories in real time
   useEffect(() => {
-    fetchConfigs();
+    const q = query(collection(db, "temporarySubCategories"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data()
+      } as TempSubCategory));
+
+      data.sort((a, b) => {
+        if ((a.order ?? 0) !== (b.order ?? 0)) {
+          return (a.order ?? 0) - (b.order ?? 0);
+        }
+
+        const aTime = a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        return aTime - bTime;
+      });
+
+      setTempSubCategories(data);
+    }, (error) => {
+      console.error("Error loading temporary subcategories:", error);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchConfigs = async () => {
-    try {
-      const docRef = doc(db, "settings", "tempSubTabs");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setTempConfigs(docSnap.data() as AllConfigs);
+  const resetTempForm = () => {
+    setEditingTempId(null);
+    setTempForm({
+      type: activeTab,
+      enabled: true,
+      name: { am: "", en: "", om: "" }
+    });
+  };
+
+  const openTempConfigForEdit = (temp: TempSubCategory) => {
+    setEditingTempId(temp.id);
+    setTempForm({
+      type: temp.type,
+      enabled: temp.enabled,
+      name: {
+        am: temp.name?.am || "",
+        en: temp.name?.en || "",
+        om: temp.name?.om || ""
       }
+    });
+  };
+
+  const saveTempSubCategory = async () => {
+    if (!tempForm.name.am.trim() && !tempForm.name.en.trim() && !tempForm.name.om.trim()) {
+      alert("Please enter at least one name.");
+      return;
+    }
+
+    try {
+      if (editingTempId) {
+        await updateDoc(doc(db, "temporarySubCategories", editingTempId), {
+          type: tempForm.type,
+          enabled: tempForm.enabled,
+          name: tempForm.name
+        });
+        alert("Temporary subcategory updated successfully!");
+      } else {
+        const sameType = tempSubCategories.filter((item) => item.type === tempForm.type);
+        const nextOrder = sameType.length > 0
+          ? Math.max(...sameType.map((item) => item.order ?? 0)) + 1
+          : 1;
+
+        await addDoc(collection(db, "temporarySubCategories"), {
+          type: tempForm.type,
+          enabled: tempForm.enabled,
+          order: nextOrder,
+          name: tempForm.name,
+          createdAt: serverTimestamp()
+        });
+        alert("Temporary subcategory created successfully!");
+      }
+
+      resetTempForm();
     } catch (error) {
-      console.error("Error fetching temporary sub-tab configurations:", error);
+      console.error("Error saving temporary subcategory:", error);
+      alert("Failed to save temporary subcategory.");
     }
   };
 
-  const saveConfigs = async () => {
+  const toggleTempSubCategory = async (temp: TempSubCategory) => {
     try {
-      await setDoc(doc(db, "settings", "tempSubTabs"), tempConfigs);
-      setShowConfigModal(false);
-      alert("Temporary sub-tab settings saved successfully!");
+      await updateDoc(doc(db, "temporarySubCategories", temp.id), {
+        enabled: !temp.enabled
+      });
     } catch (error) {
-      console.error("Error saving configuration:", error);
-      alert("Failed to save settings.");
+      console.error("Error toggling temporary subcategory:", error);
+      alert("Failed to change visibility.");
     }
+  };
+
+  const deleteTempSubCategory = async (id: string) => {
+    if (!confirm("Delete this temporary subcategory? Products assigned to it will remain in Firebase but will no longer appear under a menu category.")) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, "temporarySubCategories", id));
+    } catch (error) {
+      console.error("Error deleting temporary subcategory:", error);
+      alert("Failed to delete temporary subcategory.");
+    }
+  };
+
+  const getTempSubCategoriesForTab = (tab: string) => {
+    return tempSubCategories
+      .filter((item) => item.type === tab)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   };
 
   const getSubCategories = () => {
     let base = ["all"];
+
+    const temporary = getTempSubCategoriesForTab(activeTab)
+      .filter((item) => item.enabled)
+      .map((item) => item.id);
+
+    base = [...base, ...temporary];
+
     if (activeTab === "flower") {
       base = [...base, "wedding", "shimigilina", "birthday", "anniversery", "graduation"];
     } else if (activeTab === "decoration") {
@@ -91,14 +189,18 @@ export default function AdminDashboard() {
       base = [...base, "men", "women", "children", "father", "mother", "new born"];
     }
 
-    // Append temporary sub-tab if enabled for this tab
-    if (tempConfigs[activeTab]?.enabled) {
-      base.push("temp_package");
-    }
     return base;
   };
 
   useEffect(() => { setActiveSub("all"); }, [activeTab]);
+
+  useEffect(() => {
+    if (activeSub === "all") return;
+    const isTemporary = tempSubCategories.some((item) => item.id === activeSub);
+    if (isTemporary && !tempSubCategories.find((item) => item.id === activeSub)?.enabled) {
+      setActiveSub("all");
+    }
+  }, [tempSubCategories, activeSub]);
 
   useEffect(() => {
     setProduct(prev => ({ ...prev, type: activeTab }));
@@ -159,7 +261,7 @@ export default function AdminDashboard() {
 
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => setShowConfigModal(true)}
+              onClick={() => { resetTempForm(); setShowConfigModal(true); }}
               className="px-3.5 py-2 bg-gray-100 text-gray-700 text-xs md:text-sm font-bold rounded-full hover:bg-gray-200 transition-all flex items-center gap-1.5"
               title="Configure Temporary Packages"
             >
@@ -169,7 +271,7 @@ export default function AdminDashboard() {
 
             {!isAdding && (
               <button 
-                onClick={() => { setProduct(initialFormState); setIsAdding(true); }}
+                onClick={() => { setProduct(getInitialFormState()); setIsAdding(true); }}
                 className="px-4 py-2 bg-[var(--brand-green)] text-white text-xs md:text-sm font-bold rounded-full shadow-md hover:opacity-95 transition-all"
               >
                 + Add New
@@ -177,7 +279,7 @@ export default function AdminDashboard() {
             )}
             {isAdding && (
               <button 
-                onClick={() => { setIsAdding(false); setEditingId(null); setProduct(initialFormState); }}
+                onClick={() => { setIsAdding(false); setEditingId(null); setProduct(getInitialFormState()); }}
                 className="px-4 py-2 bg-gray-200 text-gray-700 text-xs md:text-sm font-bold rounded-full hover:bg-gray-300 transition-all"
               >
                 Back to Dashboard
@@ -187,92 +289,147 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* ===== TEMPORARY SUB-TAB CONFIGURATION MODAL ===== */}
+      {/* ===== TEMPORARY SUBCATEGORY CONFIGURATION MODAL ===== */}
       {showConfigModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--brand-light)] w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--brand-light)] w-full max-w-2xl rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-black text-[var(--text-dark)]">Configure Temporary Sub-Tab</h2>
-              <button 
-                onClick={() => setShowConfigModal(false)}
+              <div>
+                <h2 className="text-xl font-black text-[var(--text-dark)]">Temporary Packages</h2>
+                <p className="text-xs text-gray-500 mt-1">Create as many temporary subcategories as you need.</p>
+              </div>
+              <button
+                onClick={() => { setShowConfigModal(false); resetTempForm(); }}
                 className="text-gray-400 hover:text-black font-bold text-lg"
               >
                 ✕
               </button>
             </div>
-            <p className="text-xs text-gray-500 mb-6">
-              Enable a special holiday or temporary sub-tab for any main section, customize its name across languages, and toggle its visibility on the client portal instantly.
-            </p>
 
-            <div className="space-y-6">
-              {["surprise", "flower", "decoration"].map((tabKey) => {
-                const config = tempConfigs[tabKey] || { enabled: false, name: { am: "", en: "", om: "" } };
-                return (
-                  <div key={tabKey} className="p-4 rounded-2xl border-2 border-gray-100 bg-gray-50/50">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-extrabold capitalize text-sm text-[var(--brand-green)]">{tabKey} Section</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={config.enabled} 
-                          onChange={(e) => {
-                            const val = e.target.checked;
-                            setTempConfigs(prev => ({
-                              ...prev,
-                              [tabKey]: { ...config, enabled: val }
-                            }));
-                          }} 
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--brand-green)]"></div>
-                        <span className="ml-2 text-xs font-bold text-gray-700">{config.enabled ? "Visible" : "Hidden"}</span>
-                      </label>
-                    </div>
+            <div className="p-4 rounded-2xl border-2 border-gray-100 bg-gray-50/50 mb-6">
+              <h3 className="font-extrabold text-sm text-[var(--brand-green)] mb-4">
+                {editingTempId ? "Edit Temporary Subcategory" : "Create New Temporary Subcategory"}
+              </h3>
 
-                    {config.enabled && (
-                      <div className="space-y-2 mt-2 pt-2 border-t border-gray-200">
-                        <label className="block text-[11px] font-bold text-gray-500">Custom Sub-Tab Names:</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(['am', 'en', 'om'] as const).map((lng) => (
-                            <input 
-                              key={lng}
-                              type="text"
-                              placeholder={`Name (${lng.toUpperCase()})`}
-                              value={config.name[lng] || ""}
-                              onChange={(e) => {
-                                const text = e.target.value;
-                                setTempConfigs(prev => ({
-                                  ...prev,
-                                  [tabKey]: {
-                                    ...config,
-                                    name: { ...config.name, [lng]: text }
-                                  }
-                                }));
-                              }}
-                              className="p-2 border border-gray-200 rounded-xl text-xs bg-white text-gray-800 focus:border-[var(--brand-green)] outline-none font-medium"
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                <select
+                  value={tempForm.type}
+                  onChange={(e) => setTempForm(prev => ({ ...prev, type: e.target.value }))}
+                  className="p-3 border border-gray-200 rounded-xl text-xs bg-white text-gray-800 outline-none font-medium"
+                >
+                  <option value="surprise">Surprise</option>
+                  <option value="flower">Flowers</option>
+                  <option value="decoration">Decoration</option>
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Name (AM)"
+                  value={tempForm.name.am}
+                  onChange={(e) => setTempForm(prev => ({ ...prev, name: { ...prev.name, am: e.target.value } }))}
+                  className="p-3 border border-gray-200 rounded-xl text-xs bg-white text-gray-800 outline-none font-medium"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Name (EN)"
+                  value={tempForm.name.en}
+                  onChange={(e) => setTempForm(prev => ({ ...prev, name: { ...prev.name, en: e.target.value } }))}
+                  className="p-3 border border-gray-200 rounded-xl text-xs bg-white text-gray-800 outline-none font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="Name (OM)"
+                  value={tempForm.name.om}
+                  onChange={(e) => setTempForm(prev => ({ ...prev, name: { ...prev.name, om: e.target.value } }))}
+                  className="p-3 border border-gray-200 rounded-xl text-xs bg-white text-gray-800 outline-none font-medium"
+                />
+
+                <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tempForm.enabled}
+                    onChange={(e) => setTempForm(prev => ({ ...prev, enabled: e.target.checked }))}
+                    className="w-4 h-4 accent-[var(--brand-green)]"
+                  />
+                  <span className="text-xs font-bold text-gray-700">Visible to customers</span>
+                </label>
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={saveTempSubCategory}
+                  className="flex-1 py-3 bg-[var(--brand-green)] text-white rounded-xl font-bold text-sm shadow-md hover:opacity-95 transition-all"
+                >
+                  {editingTempId ? "Update" : "Add Temporary Package"}
+                </button>
+
+                {editingTempId && (
+                  <button
+                    onClick={resetTempForm}
+                    className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-300 transition-all"
+                  >
+                    New
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <button 
-                onClick={saveConfigs}
-                className="flex-1 py-3 bg-[var(--brand-green)] text-white rounded-2xl font-bold text-sm shadow-md hover:opacity-95 transition-all"
-              >
-                Save Settings
-              </button>
-              <button 
-                onClick={() => setShowConfigModal(false)}
-                className="px-4 py-3 bg-gray-200 text-gray-700 rounded-2xl font-bold text-sm hover:bg-gray-300 transition-all"
-              >
-                Cancel
-              </button>
+            <div className="space-y-3">
+              <h3 className="font-extrabold text-sm text-gray-700">Existing Temporary Categories</h3>
+
+              {tempSubCategories.length === 0 ? (
+                <div className="p-5 text-center rounded-2xl bg-gray-50 border border-gray-100 text-xs text-gray-500">
+                  No temporary subcategories created yet.
+                </div>
+              ) : (
+                tempSubCategories.map((temp) => (
+                  <div key={temp.id} className="p-4 rounded-2xl border border-gray-200 bg-white flex flex-col md:flex-row md:items-center gap-3 justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-sm text-[var(--brand-green)]">
+                          {temp.name.en || temp.name.am || temp.name.om || "Unnamed"}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                          {temp.type}
+                        </span>
+                        <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${temp.enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                          {temp.enabled ? "Visible" : "Hidden"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        AM: {temp.name.am || "-"} · OM: {temp.name.om || "-"}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => toggleTempSubCategory(temp)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold ${temp.enabled ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}
+                      >
+                        {temp.enabled ? "Disable" : "Enable"}
+                      </button>
+                      <button
+                        onClick={() => openTempConfigForEdit(temp)}
+                        className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => deleteTempSubCategory(temp.id)}
+                        className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100"
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -310,22 +467,22 @@ export default function AdminDashboard() {
         {/* Subcategories Horizontal Scroll */}
         <div className="flex justify-start md:justify-center overflow-x-auto gap-2 mb-8 pb-2 scrollbar-none">
           {getSubCategories().map(sub => {
-            const isTemp = sub === "temp_package";
-            const customName = tempConfigs[activeTab]?.name?.en || "Special Holiday";
-            
+            const temp = tempSubCategories.find(item => item.id === sub);
+            const isTemp = !!temp;
+
             return (
-              <button 
-                key={sub} 
-                onClick={() => setActiveSub(sub)} 
+              <button
+                key={sub}
+                onClick={() => setActiveSub(sub)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                  activeSub === sub 
-                    ? "bg-[var(--text-dark)] text-white shadow-sm" 
-                    : isTemp 
+                  activeSub === sub
+                    ? "bg-[var(--text-dark)] text-white shadow-sm"
+                    : isTemp
                       ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
                       : "bg-[var(--brand-light)] text-gray-500 border border-gray-200 hover:bg-gray-100"
                 }`}
               >
-                {isTemp ? customName.toUpperCase() : sub.toUpperCase()}
+                {isTemp ? (temp?.name?.en || temp?.name?.am || "Special").toUpperCase() : sub.toUpperCase()}
               </button>
             );
           })}
@@ -344,7 +501,7 @@ export default function AdminDashboard() {
             } else {
               await addDoc(collection(db, "products"), { ...productData, visible: true, createdAt: serverTimestamp() });
             }
-            setProduct(initialFormState);
+            setProduct(getInitialFormState());
             setEditingId(null);
             setIsAdding(false);
             fetchProducts();
@@ -359,14 +516,14 @@ export default function AdminDashboard() {
               className="w-full p-3.5 mb-4 border-2 border-gray-200 rounded-2xl bg-[var(--brand-light)] text-[var(--text-dark)] font-medium focus:border-[var(--brand-green)] outline-none text-sm" 
               value={product.subCategory || ""} 
               onChange={(e) => setProduct({...product, subCategory: e.target.value})}
+              required
             >
               <option value="" disabled>Select Subcategory</option>
               {getSubCategories().filter(c => c !== "all").map(cat => {
-                const isTemp = cat === "temp_package";
-                const customLabel = tempConfigs[activeTab]?.name?.en || "Special Holiday";
+                const temp = tempSubCategories.find(item => item.id === cat);
                 return (
                   <option key={cat} value={cat}>
-                    {isTemp ? customLabel.toUpperCase() : cat.toUpperCase()}
+                    {temp ? (temp.name.en || temp.name.am || temp.name.om || "Special").toUpperCase() : cat.toUpperCase()}
                   </option>
                 );
               })}
@@ -441,7 +598,7 @@ export default function AdminDashboard() {
             </button>
             <button 
               type="button" 
-              onClick={() => { setIsAdding(false); setEditingId(null); setProduct(initialFormState); }} 
+              onClick={() => { setIsAdding(false); setEditingId(null); setProduct(getInitialFormState()); }} 
               className="w-full mt-2 py-2 text-gray-500 text-xs font-semibold hover:text-black"
             >
               Cancel
@@ -456,7 +613,7 @@ export default function AdminDashboard() {
                   <img src={p.images[0]} className="w-full h-full object-cover" alt={`Package ${index + 1}`} />
                   <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md">
                     <span className="text-[10px] text-white font-bold uppercase">
-                      {p.subCategory === "temp_package" ? (tempConfigs[activeTab]?.name?.en || "Special") : p.subCategory}
+                      {tempSubCategories.find(item => item.id === p.subCategory)?.name?.en || p.subCategory}
                     </span>
                   </div>
                 </div>
