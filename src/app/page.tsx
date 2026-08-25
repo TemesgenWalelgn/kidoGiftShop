@@ -203,14 +203,23 @@ export default function UserPage() {
 
       <header className="bg-[var(--brand-light)] border-b border-gray-200 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-10 h-20 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xl md:text-2xl font-black text-[var(--brand-green)]">
-              {translations[lang].brandName}
-            </span>
-            <span className="text-[10px] md:text-xs text-gray-500 hidden sm:block">
-              {translations[lang].tagline}
-            </span>
-          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+              <img
+                src="https://res.cloudinary.com/dmp2grjb1/image/upload/v1787681880/kido_logo_f2vkmh.png"
+                alt="KIDO Logo"
+                className="h-14 sm:h-16 md:h-[70px] w-auto object-contain"
+              />
+
+              <div className="flex flex-col justify-center leading-none">
+                <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-wide text-[var(--brand-green)]">
+                  KIDO
+                </span>
+
+                <span className="text-[8px] sm:text-[10px] md:text-xs font-semibold tracking-[0.15em] text-gray-500 mt-1">
+                  FLOWERS & GIFTS SHOP
+                </span>
+              </div>
+            </div>
 
           <div className="flex gap-1.5 bg-gray-100 p-1 rounded-full border">
             {(["አማርኛ", "English", "Afaan Oromoo"] as const).map(l => {
