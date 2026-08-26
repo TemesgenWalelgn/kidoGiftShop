@@ -2,14 +2,122 @@
 
 /* ===== ROOT COLORS ===== */
 :root {
-    --brand-gold: #f39c12;    /* Vibrant Gold */
-    --brand-green: #2f794e;   /* Emerald Green */
-    --brand-light: #ffffff;   /* Pure White */
-    --brand-teal: #16a085;    /* Teal */
-    --soft-green: #f0fdf4;    /* Very Light Green tint */
-    --text-dark: #1a1a1a;     /* subTabBg Color */
-    --brand-bg: #e3e7eb;      /* Background Color */
+    --brand-gold: #f39c12;
+    --brand-green: #2f794e;
+    --brand-light: #ffffff;
+    --brand-teal: #16a085;
+    --soft-green: #f0fdf4;
+    --text-dark: #1a1a1a;
+    --brand-bg: #e3e7eb;
+
+    --background: var(--brand-bg);
+    --foreground: var(--text-dark);
+
+    /* Event theme variables */
+    --event-primary: var(--brand-green);
+    --event-secondary: var(--brand-gold);
+    --event-accent: var(--brand-teal);
+    --event-soft: var(--soft-green);
+    --event-glow: rgba(47, 121, 78, 0.18);
 }
+
+/* =====================================================
+   EVENT THEMES
+   ===================================================== */
+
+/* 🇪🇹 Ethiopian New Year */
+.theme-newyear {
+    --brand-green: #176b4d;
+    --brand-gold: #e1ad3d;
+    --brand-teal: #16866e;
+    --soft-green: #fff8df;
+    --brand-bg: linear-gradient(135deg, #f7fff9, #fff9e8, #f1fbf5);
+
+    --event-primary: #176b4d;
+    --event-secondary: #e1ad3d;
+    --event-accent: #16866e;
+    --event-soft: #fff8df;
+    --event-glow: rgba(225, 173, 61, 0.25);
+}
+
+/* ❤️ Valentine's Day */
+.theme-valentine {
+    --brand-green: #8e1736;
+    --brand-gold: #d84a6a;
+    --brand-teal: #b92f52;
+    --soft-green: #fff1f5;
+    --brand-bg: linear-gradient(135deg, #fff5f7, #ffe8ef, #ffffff);
+
+    --event-primary: #8e1736;
+    --event-secondary: #d84a6a;
+    --event-accent: #f19ab0;
+    --event-soft: #fff1f5;
+    --event-glow: rgba(216, 74, 106, 0.25);
+}
+
+/* 🎄 Christmas */
+.theme-christmas {
+    --brand-green: #12613e;
+    --brand-gold: #d4a638;
+    --brand-teal: #1b8158;
+    --soft-green: #f0faf4;
+    --brand-bg: linear-gradient(135deg, #f3fbf5, #fff8e5, #fff3f3);
+
+    --event-primary: #12613e;
+    --event-secondary: #d4a638;
+    --event-accent: #b72d35;
+    --event-soft: #f0faf4;
+    --event-glow: rgba(212, 166, 56, 0.25);
+}
+
+/* ☪️ Muslim Holy Days */
+.theme-muslim {
+    --brand-green: #086b55;
+    --brand-gold: #d5aa45;
+    --brand-teal: #168d73;
+    --soft-green: #f1faf5;
+    --brand-bg: linear-gradient(135deg, #f1faf5, #fff9e8, #eef8f4);
+
+    --event-primary: #086b55;
+    --event-secondary: #d5aa45;
+    --event-accent: #168d73;
+    --event-soft: #f1faf5;
+    --event-glow: rgba(213, 170, 69, 0.25);
+}
+
+/* 👔 Father's Day */
+.theme-fathers {
+    --brand-green: #183b63;
+    --brand-gold: #c9a447;
+    --brand-teal: #3675a8;
+    --soft-green: #eef5fb;
+    --brand-bg: linear-gradient(135deg, #f1f6fb, #eaf1f8, #fff9e9);
+
+    --event-primary: #183b63;
+    --event-secondary: #c9a447;
+    --event-accent: #3675a8;
+    --event-soft: #eef5fb;
+    --event-glow: rgba(54, 117, 168, 0.25);
+}
+
+/* 🌷 Mother's Day */
+.theme-mothers {
+    --brand-green: #a32f61;
+    --brand-gold: #d5a45a;
+    --brand-teal: #c44d7d;
+    --soft-green: #fff2f7;
+    --brand-bg: linear-gradient(135deg, #fff5f8, #fff0f5, #fff9ed);
+
+    --event-primary: #a32f61;
+    --event-secondary: #d5a45a;
+    --event-accent: #c44d7d;
+    --event-soft: #fff2f7;
+    --event-glow: rgba(228, 124, 163, 0.25);
+}
+
+/* =====================================================
+   TAILWIND THEME
+   ===================================================== */
 
 @theme inline {
   --color-background: var(--background);
@@ -18,6 +126,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* =====================================================
+   DARK MODE
+   ===================================================== */
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -25,8 +137,201 @@
   }
 }
 
+/* =====================================================
+   BODY
+   ===================================================== */
+
 body {
-  background: var(--background);
+  margin: 0;
+  background: var(--brand-bg);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background 0.6s ease, color 0.4s ease;
+}
+
+/* =====================================================
+   EVENT BACKGROUND
+   ===================================================== */
+
+.theme-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      var(--event-glow),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      var(--event-glow),
+      transparent 25%
+    ),
+    var(--brand-bg);
+
+  transition: background 0.8s ease;
+}
+
+/* =====================================================
+   EVENT BUTTON / GRADIENT
+   ===================================================== */
+
+.theme-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--event-primary),
+    var(--event-accent),
+    var(--event-secondary)
+  );
+}
+
+.theme-button {
+  background: linear-gradient(
+    135deg,
+    var(--event-primary),
+    var(--event-accent)
+  );
+  color: white;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.theme-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--event-glow);
+}
+
+/* =====================================================
+   EVENT CARDS
+   ===================================================== */
+
+.theme-card {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.theme-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px var(--event-glow);
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+
+@keyframes themeFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes themeGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--event-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 25px var(--event-glow);
+  }
+}
+
+@keyframes themeFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes themeShine {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.theme-animate {
+  animation: themeFade 0.6s ease both;
+}
+
+.theme-glow {
+  animation: themeGlow 3s ease-in-out infinite;
+}
+
+.theme-float {
+  animation: themeFloat 3s ease-in-out infinite;
+}
+
+.theme-shine {
+  background: linear-gradient(
+    110deg,
+    var(--event-primary) 35%,
+    var(--event-secondary) 50%,
+    var(--event-primary) 65%
+  );
+
+  background-size: 200% 100%;
+  animation: themeShine 4s linear infinite;
+}
+
+/* =====================================================
+   OPTIONAL EVENT PARTICLES
+   ===================================================== */
+
+.event-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.event-particles::before,
+.event-particles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+
+  background-image:
+    radial-gradient(
+      circle,
+      var(--event-secondary) 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle,
+      var(--event-primary) 1px,
+      transparent 2px
+    );
+
+  background-size: 55px 55px, 80px 80px;
+
+  animation: themeFloat 8s ease-in-out infinite;
+}
+
+/* =====================================================
+   ACCESSIBILITY
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
