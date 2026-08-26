@@ -148,9 +148,9 @@ export default function UserPage() {
     },
 
     om: {
-      brandName: "Kennaafi Abaaroowwan Kido",
-      tagline: "Abaaroowwan miidhagoo fi qophii kennaa addaa guyyoota keessaniif",
-      footerAbout: "Suuqii Kennaa fi Abaarsaa Kido - Jaalala keessan kennaadhaan ibsaa.",
+      brandName: "Kennaafi Abaaboowwan Kido",
+      tagline: "Abaaboowwan miidhagoo fi qophii kennaa addaa guyyoota keessaniif",
+      footerAbout: "Suuqii Kennaa fi Abaabsaa Kido - Jaalala keessan kennaadhaan ibsaa.",
       collectionTitle: "Walitti Qabama Keenya",
       orderButton: "Ajajaa",
       orderSuccess: "Ajajni Ergame! ✅",
