@@ -19,6 +19,7 @@ interface Product {
   subCategory: string;
   flowerCount?: string | number;
   visible?: boolean;
+  createdAt?: any;
 }
 
 interface TempSubCategory {
@@ -43,6 +44,10 @@ export default function UserPage() {
   const [eventEnabled, setEventEnabled] = useState(false);
   const [eventAnimation, setEventAnimation] = useState(true);
   const [eventParticles, setEventParticles] = useState(false);
+
+  // ===== PACKAGE / SUBCATEGORY MANAGEMENT =====
+  const [subCategoryOrder, setSubCategoryOrder] = useState<Record<string, string[]>>({});
+  const [sortOption, setSortOption] = useState("newest");
 
   const translations = {
     am: {
@@ -243,43 +248,64 @@ export default function UserPage() {
     );
   }, []);
 
-  const getSubCategories = () => {
-    const normal =
-      activeTab === "flower"
-        ? [
-            "all",
-            "wedding",
-            "shimigilina",
-            "birthday",
-            "anniversery",
-            "graduation"
-          ]
-        : activeTab === "decoration"
-        ? [
-            "all",
-            "birthday",
-            "shimigilina",
-            "nika",
-            "wedding",
-            "babtaizm",
-            "graduation"
-          ]
-        : [
-            "all",
-            "men",
-            "women",
-            "children",
-            "father",
-            "mother",
-            "new born"
-          ];
+  // ===== LOAD ADMIN SUBCATEGORY ORDER =====
+  useEffect(() => {
+    return onSnapshot(
+      doc(db, "settings", "subCategoryOrder"),
+      snapshot => {
+        if (snapshot.exists()) {
+          setSubCategoryOrder(snapshot.data().orders || {});
+        }
+      },
+      error => console.error("Subcategory order:", error)
+    );
+  }, []);
 
+  const getDefaultSubCategories = (tab: string) => {
+    if (tab === "flower") {
+      return ["all", "wedding", "shimigilina", "birthday", "anniversery", "graduation"];
+    }
+
+    if (tab === "decoration") {
+      return ["all", "birthday", "shimigilina", "nika", "wedding", "babtaizm", "graduation"];
+    }
+
+    return ["all", "men", "women", "children", "father", "mother", "new born"];
+  };
+
+  const getSubCategoriesForTab = (tab: string) => {
+    const normal = getDefaultSubCategories(tab);
     const temporary = tempSubs
-      .filter(x => x.type === activeTab)
+      .filter(x => x.type === tab)
       .map(x => x.id);
 
-    return [normal[0], ...temporary, ...normal.slice(1)];
+    const available = [...normal, ...temporary];
+    const saved = subCategoryOrder[tab] || [];
+
+    return [
+      ...saved.filter(id => available.includes(id)),
+      ...available.filter(id => !saved.includes(id))
+    ];
   };
+
+  const sortProductList = (items: Product[]) => {
+    return [...items].sort((a, b) => {
+      if (sortOption === "priceLow") {
+        return Number(a.price) - Number(b.price);
+      }
+
+      if (sortOption === "priceHigh") {
+        return Number(b.price) - Number(a.price);
+      }
+
+      const aTime = a.createdAt?.toMillis?.() ?? 0;
+      const bTime = b.createdAt?.toMillis?.() ?? 0;
+
+      return sortOption === "oldest" ? aTime - bTime : bTime - aTime;
+    });
+  };
+
+  const getSubCategories = () => getSubCategoriesForTab(activeTab);
 
   const getSubName = (sub: string) => {
     const temp = tempSubs.find(x => x.id === sub);
@@ -305,20 +331,22 @@ export default function UserPage() {
       let data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        images:
-          doc.data().images ||
-          (doc.data().imageUrl ? [doc.data().imageUrl] : [])
+        images: doc.data().images || (doc.data().imageUrl ? [doc.data().imageUrl] : [])
       } as Product));
+
+      // Remove duplicate products by Firestore document ID
+      data = Array.from(
+        new Map(data.map(item => [item.id, item])).values()
+      );
 
       data = data.filter(p => p.visible !== false);
 
-      if (activeSub !== "all") {
+      if (activeSub !== "all")
         data = data.filter(p => p.subCategory === activeSub);
-      }
 
-      setProducts(data);
+      setProducts(sortProductList(data));
     });
-  }, [activeTab, activeSub]);
+  }, [activeTab, activeSub, sortOption]);
 
   const handleOrder = (p: Product, index: number) => {
     setLoadingId(p.id);
@@ -403,8 +431,7 @@ export default function UserPage() {
 
           <div className="flex gap-1.5 bg-gray-100 p-1 rounded-full border">
 
-            {(["አማርኛ", "English", "Afaan Oromoo"] as const).map(l => {
-
+            {(["አማርኛ", "English", "Afaan Oromoo"] as const).map((l, index) => {
               const code =
                 l === "አማርኛ"
                   ? "am"
@@ -414,7 +441,7 @@ export default function UserPage() {
 
               return (
                 <button
-                  key={l}
+                  key={`${l}-${index}`}
                   onClick={() => setLang(code)}
                   className={`px-3 py-1 rounded-full font-bold text-xs ${
                     lang === code
@@ -448,10 +475,10 @@ export default function UserPage() {
 
         <div className="flex flex-wrap justify-center gap-2 mb-8">
 
-          {["surprise", "flower", "decoration"].map(tab => (
+          {(["surprise", "flower", "decoration"] as const).map((tab, index) => (
 
             <button
-              key={tab}
+              key={`${tab}-${index}`}
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-2.5 rounded-full font-bold border-2 text-sm md:text-base ${
                 activeTab === tab
@@ -470,10 +497,10 @@ export default function UserPage() {
 
         <div className="flex justify-center flex-wrap gap-2 mb-8">
 
-          {getSubCategories().map(sub => (
+          {getSubCategories().map((sub, index) => (
 
             <button
-              key={sub}
+              key={`${sub}-${index}`}
               onClick={() => setActiveSub(sub)}
               className={`px-4 py-1.5 rounded-xl text-xs md:text-sm font-semibold ${
                 activeSub === sub
@@ -486,6 +513,27 @@ export default function UserPage() {
 
           ))}
 
+        </div>
+
+        {/* Sorting Menu Added Directly Above the Card List with Sorting Icon */}
+        <div className="flex justify-end items-center mb-6 px-1">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-xl shadow-sm">
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+            </svg>
+            <select
+              value={sortOption}
+              onChange={(e) => {
+                setSortOption(e.target.value);
+                setProducts((prev) => sortProductList(prev));
+              }}
+              className="bg-transparent text-xs font-bold text-gray-700 outline-none cursor-pointer"
+              title="Sort packages"
+            >
+              <option value="priceLow">⬆️ Low to high price</option>
+              <option value="priceHigh">⬇️ High to low price</option>
+            </select>
+          </div>
         </div>
 
         {/* 2 columns on mobile, 3 laptop, 4 desktop */}
@@ -501,7 +549,7 @@ export default function UserPage() {
             return (
 
               <div
-                key={p.id}
+                key={`${p.id}-${index}`}
                 className={`theme-card bg-[var(--brand-light)] rounded-2xl md:rounded-3xl p-2 sm:p-3 md:p-4 shadow-sm border border-gray-100 flex flex-col h-full min-w-0 hover:shadow-md transition-shadow ${
                   eventAnimation ? "theme-animate" : ""
                 }`}
@@ -704,7 +752,7 @@ function GalleryView({ product }: { product: Product }) {
         {product.images.map((img, i) => (
 
           <button
-            key={i}
+            key={`${img}-${i}`}
             onClick={() => setMain(img)}
             className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
               main === img

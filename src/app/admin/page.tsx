@@ -27,6 +27,7 @@ interface Product {
   subCategory: string;
   flowerCount?: string | number;
   visible?: boolean;
+  createdAt?: any;
 }
 
 interface TempSubCategory {
@@ -58,6 +59,13 @@ export default function AdminDashboard() {
   const [eventParticles, setEventParticles] = useState(false);
   const [savingEventTheme, setSavingEventTheme] = useState(false);
   const [showEventPanel, setShowEventPanel] = useState(false);
+
+  // ===== PACKAGE / SUBCATEGORY MANAGEMENT =====
+  const [subCategoryOrder, setSubCategoryOrder] = useState<Record<string, string[]>>({});
+  const [draggedSub, setDraggedSub] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState("newest");
+  const [copyingProduct, setCopyingProduct] = useState<Product | null>(null);
+  const [copyTargetSub, setCopyTargetSub] = useState("");
 
   const [tempForm, setTempForm] = useState({
     type: "surprise",
@@ -131,6 +139,176 @@ export default function AdminDashboard() {
 
     return () => unsubscribe();
   }, []);
+
+  // ===== LOAD SUBCATEGORY ORDER =====
+  useEffect(() => {
+    return onSnapshot(
+      doc(db, "settings", "subCategoryOrder"),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setSubCategoryOrder(snapshot.data().orders || {});
+        }
+      },
+      (error) => console.error("Error loading subcategory order:", error)
+    );
+  }, []);
+
+  const getDefaultSubCategories = (tab: string) => {
+    if (tab === "flower") {
+      return ["all", "wedding", "shimigilina", "birthday", "anniversery", "graduation"];
+    }
+
+    if (tab === "decoration") {
+      return ["all", "birthday", "shimigilina", "nika", "wedding", "babtaizm", "graduation"];
+    }
+
+    return ["all", "men", "women", "children", "father", "mother", "new born"];
+  };
+
+  const getSubCategoriesForTab = (tab: string) => {
+    const normal = getDefaultSubCategories(tab);
+    const temporary = tempSubCategories
+      .filter((item) => item.type === tab && item.enabled)
+      .map((item) => item.id);
+
+    const available = [...normal, ...temporary];
+    const saved = subCategoryOrder[tab] || [];
+
+    const ordered = [
+      ...saved.filter((id) => available.includes(id)),
+      ...available.filter((id) => !saved.includes(id))
+    ];
+
+    return ordered;
+  };
+
+  const saveSubCategoryOrder = async (tab: string, order: string[]) => {
+    try {
+      const nextOrders = { ...subCategoryOrder, [tab]: order };
+      setSubCategoryOrder(nextOrders);
+      await setDoc(
+        doc(db, "settings", "subCategoryOrder"),
+        { orders: nextOrders },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Error saving subcategory order:", error);
+      alert("Failed to save subcategory order.");
+    }
+  };
+
+  const handleSubDrop = async (targetSub: string) => {
+    if (!draggedSub || draggedSub === targetSub) {
+      setDraggedSub(null);
+      return;
+    }
+
+    const current = getSubCategoriesForTab(activeTab);
+    const from = current.indexOf(draggedSub);
+    const to = current.indexOf(targetSub);
+
+    if (from < 0 || to < 0) {
+      setDraggedSub(null);
+      return;
+    }
+
+    const next = [...current];
+    next.splice(from, 1);
+    next.splice(to, 0, draggedSub);
+
+    setDraggedSub(null);
+    await saveSubCategoryOrder(activeTab, next);
+  };
+
+  const sortProductList = (items: Product[]) => {
+    return [...items].sort((a, b) => {
+      if (sortOption === "priceLow") {
+        return Number(a.price) - Number(b.price);
+      }
+
+      if (sortOption === "priceHigh") {
+        return Number(b.price) - Number(a.price);
+      }
+
+      const aTime = a.createdAt?.toMillis?.() ?? 0;
+      const bTime = b.createdAt?.toMillis?.() ?? 0;
+
+      return sortOption === "oldest" ? aTime - bTime : bTime - aTime;
+    });
+  };
+
+  // ===== DUPLICATE PACKAGE =====
+  const duplicateProduct = async () => {
+    if (!copyingProduct || !copyTargetSub) return;
+
+    if (copyTargetSub === copyingProduct.subCategory) {
+      alert("The package is already in this subcategory.");
+      return;
+    }
+
+    try {
+      let targetTabType = copyingProduct.type;
+      const targetTempSub = tempSubCategories.find((item) => item.id === copyTargetSub);
+      if (targetTempSub) {
+        targetTabType = targetTempSub.type;
+      } else {
+        const flowerDefaults = getDefaultSubCategories("flower");
+        const decoDefaults = getDefaultSubCategories("decoration");
+        if (flowerDefaults.includes(copyTargetSub)) targetTabType = "flower";
+        else if (decoDefaults.includes(copyTargetSub)) targetTabType = "decoration";
+        else targetTabType = "surprise";
+      }
+
+      const snapshot = await getDocs(
+        query(
+          collection(db, "products"),
+          where("type", "==", targetTabType)
+        )
+      );
+
+      const duplicateExists = snapshot.docs.some((item) => {
+        const data = item.data();
+        return (
+          data.subCategory === copyTargetSub &&
+          Number(data.price) === Number(copyingProduct.price) &&
+          JSON.stringify(data.description || {}) ===
+            JSON.stringify(copyingProduct.description || {}) &&
+          JSON.stringify(data.images || []) ===
+            JSON.stringify(copyingProduct.images || [])
+        );
+      });
+
+      if (duplicateExists) {
+        alert("A similar package already exists in the destination subcategory.");
+        return;
+      }
+
+      // Destructure and separate the old 'id' so it doesn't get saved into the new document reference
+      const { id, ...productWithoutId } = copyingProduct;
+
+      await addDoc(collection(db, "products"), {
+        ...productWithoutId,
+        type: targetTabType,
+        subCategory: copyTargetSub,
+        createdAt: serverTimestamp()
+      });
+
+      alert("Package duplicated successfully!");
+
+      const destinationTab = targetTabType;
+      const destinationSub = copyTargetSub;
+
+      setCopyingProduct(null);
+      setCopyTargetSub("");
+
+      setActiveTab(destinationTab);
+      setActiveSub(destinationSub);
+      fetchProducts();
+    } catch (error) {
+      console.error("Error duplicating package:", error);
+      alert("Failed to duplicate package.");
+    }
+  };
 
   // ===== SAVE EVENT THEME =====
   const saveEventTheme = async () => {
@@ -256,48 +434,7 @@ export default function AdminDashboard() {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   };
 
-  const getSubCategories = () => {
-    let base = ["all"];
-
-    const temporary = getTempSubCategoriesForTab(activeTab)
-      .filter((item) => item.enabled)
-      .map((item) => item.id);
-
-    base = [...base, ...temporary];
-
-    if (activeTab === "flower") {
-      base = [
-        ...base,
-        "wedding",
-        "shimigilina",
-        "birthday",
-        "anniversery",
-        "graduation"
-      ];
-    } else if (activeTab === "decoration") {
-      base = [
-        ...base,
-        "birthday",
-        "shimigilina",
-        "nika",
-        "wedding",
-        "babtaizm",
-        "graduation"
-      ];
-    } else {
-      base = [
-        ...base,
-        "men",
-        "women",
-        "children",
-        "father",
-        "mother",
-        "new born"
-      ];
-    }
-
-    return base;
-  };
+  const getSubCategories = () => getSubCategoriesForTab(activeTab);
 
   useEffect(() => {
     setActiveSub("all");
@@ -323,6 +460,10 @@ export default function AdminDashboard() {
     fetchProducts();
   }, [activeTab, activeSub]);
 
+  useEffect(() => {
+    setProducts((prev) => sortProductList(prev));
+  }, [sortOption]);
+
   const fetchProducts = async () => {
     const q = query(
       collection(db, "products"),
@@ -331,19 +472,24 @@ export default function AdminDashboard() {
 
     const snapshot = await getDocs(q);
 
-    let data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    let data = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
       images:
-        doc.data().images ||
-        (doc.data().imageUrl ? [doc.data().imageUrl] : [])
+        docSnap.data().images ||
+        (docSnap.data().imageUrl ? [docSnap.data().imageUrl] : [])
     } as Product));
+
+    // Remove duplicate products by Firestore document ID safely
+    data = Array.from(
+      new Map(data.map((item) => [item.id, item])).values()
+    );
 
     if (activeSub !== "all") {
       data = data.filter((p) => p.subCategory === activeSub);
     }
 
-    setProducts(data);
+    setProducts(sortProductList(data));
   };
 
   const removeImage = (index: number) => {
@@ -400,7 +546,7 @@ export default function AdminDashboard() {
             </span>
 
             <span className="text-[10px] md:text-xs text-gray-500 font-medium hidden sm:block">
-              Kido Gifts & Flower Shop Management
+              Kido Gifts & Flower Shop Management[cite: 1]
             </span>
           </div>
 
@@ -736,9 +882,9 @@ export default function AdminDashboard() {
                   No temporary subcategories created yet.
                 </div>
               ) : (
-                tempSubCategories.map((temp) => (
+                tempSubCategories.map((temp, index) => (
                   <div
-                    key={temp.id}
+                    key={`${temp.id}-${index}`}
                     className="p-4 rounded-2xl border border-gray-200 bg-white flex flex-col md:flex-row md:items-center gap-3 justify-between"
                   >
 
@@ -821,6 +967,72 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ===== DUPLICATE PACKAGE MODAL ===== */}
+      {copyingProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--brand-light)] w-full max-w-md rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-xl font-black text-[var(--text-dark)]">
+                  Duplicate Package
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Copy this package to another subcategory.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setCopyingProduct(null);
+                  setCopyTargetSub("");
+                }}
+                className="text-gray-400 hover:text-black font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 mb-4">
+              <p className="text-xs font-bold text-gray-500">Current package</p>
+              <p className="text-sm font-black text-[var(--brand-green)] mt-1">
+                {Number(copyingProduct.price).toLocaleString()} ETB
+              </p>
+            </div>
+
+            <label className="block text-xs font-bold text-gray-500 mb-1">
+              Copy to subcategory
+            </label>
+
+            <select
+              value={copyTargetSub}
+              onChange={(e) => setCopyTargetSub(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-xl text-sm bg-white text-gray-800 outline-none mb-4"
+            >
+              <option value="">Select destination</option>
+              {getSubCategories()
+                .filter((cat) => cat !== "all" && cat !== copyingProduct.subCategory)
+                .map((cat, index) => {
+                  const temp = tempSubCategories.find((item) => item.id === cat);
+                  return (
+                    <option key={`${cat}-${index}`} value={cat}>
+                      {temp
+                        ? (temp.name.en || temp.name.am || temp.name.om || "Special").toUpperCase()
+                        : cat.toUpperCase()}
+                    </option>
+                  );
+                })}
+            </select>
+
+            <button
+              onClick={duplicateProduct}
+              disabled={!copyTargetSub}
+              className="w-full py-3 bg-[var(--brand-green)] text-white rounded-xl font-bold text-sm disabled:opacity-40"
+            >
+              Duplicate Package
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ===== MAIN CONTENT AREA ===== */}
       <main className="flex-grow p-4 md:p-6 lg:p-10 max-w-7xl mx-auto w-full">
 
@@ -837,9 +1049,9 @@ export default function AdminDashboard() {
             { id: "surprise", label: "Surprise" },
             { id: "flower", label: "Flowers" },
             { id: "decoration", label: "Decoration" }
-          ].map((tab) => (
+          ].map((tab, index) => (
             <button
-              key={tab.id}
+              key={`${tab.id}-${index}`}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 md:px-6 py-2 rounded-full font-bold transition-all duration-300 border text-xs md:text-base whitespace-nowrap ${
                 activeTab === tab.id
@@ -854,38 +1066,51 @@ export default function AdminDashboard() {
         </div>
 
         {/* Subcategories Horizontal Scroll */}
-        <div className="flex justify-start md:justify-center overflow-x-auto gap-2 mb-8 pb-2 scrollbar-none">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3 mb-8">
+          <div className="flex justify-start md:justify-center overflow-x-auto gap-2 pb-2 scrollbar-none">
+            {getSubCategories().map((sub, index) => {
+              const temp = tempSubCategories.find((item) => item.id === sub);
+              const isTemp = !!temp;
 
-          {getSubCategories().map((sub) => {
-            const temp = tempSubCategories.find(
-              (item) => item.id === sub
-            );
+              return (
+                <button
+                  key={`${sub}-${index}`}
+                  draggable
+                  onDragStart={() => setDraggedSub(sub)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleSubDrop(sub)}
+                  onClick={() => setActiveSub(sub)}
+                  title="Drag to change position"
+                  className={`px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 cursor-grab active:cursor-grabbing ${
+                    activeSub === sub
+                      ? "bg-[var(--text-dark)] text-white shadow-sm"
+                      : isTemp
+                      ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
+                      : "bg-[var(--brand-light)] text-gray-500 border border-gray-200 hover:bg-gray-100"
+                  }`}
+                >
+                  {isTemp
+                    ? (temp?.name?.en || temp?.name?.am || "Special").toUpperCase()
+                    : sub.toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
 
-            const isTemp = !!temp;
-
-            return (
-              <button
-                key={sub}
-                onClick={() => setActiveSub(sub)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                  activeSub === sub
-                    ? "bg-[var(--text-dark)] text-white shadow-sm"
-                    : isTemp
-                    ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
-                    : "bg-[var(--brand-light)] text-gray-500 border border-gray-200 hover:bg-gray-100"
-                }`}
-              >
-                {isTemp
-                  ? (
-                      temp?.name?.en ||
-                      temp?.name?.am ||
-                      "Special"
-                    ).toUpperCase()
-                  : sub.toUpperCase()}
-              </button>
-            );
-          })}
-
+          <select
+            value={sortOption}
+            onChange={(e) => {
+              setSortOption(e.target.value);
+              setProducts((prev) => sortProductList(prev));
+            }}
+            className="self-center px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 outline-none"
+            title="Sort package list"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="priceLow">Price: Low to High</option>
+            <option value="priceHigh">Price: High to Low</option>
+          </select>
         </div>
 
         {isAdding ? (
@@ -953,13 +1178,13 @@ export default function AdminDashboard() {
 
               {getSubCategories()
                 .filter((c) => c !== "all")
-                .map((cat) => {
+                .map((cat, index) => {
                   const temp = tempSubCategories.find(
                     (item) => item.id === cat
                   );
 
                   return (
-                    <option key={cat} value={cat}>
+                    <option key={`${cat}-${index}`} value={cat}>
                       {temp
                         ? (
                             temp.name.en ||
@@ -1034,7 +1259,7 @@ export default function AdminDashboard() {
 
                 {product.images.map((url, i) => (
                   <div
-                    key={i}
+                    key={`${url}-${i}`}
                     className="relative w-16 h-16 md:w-20 md:h-20"
                   >
                     <img
@@ -1121,7 +1346,7 @@ export default function AdminDashboard() {
             {products.map((p, index) => (
 
               <div
-                key={p.id}
+                key={`${p.id}-${index}`}
                 className={`theme-card bg-[var(--brand-light)] rounded-3xl p-3 md:p-4 shadow-sm border border-gray-100 flex flex-row items-stretch gap-4 transition-all ${
                   p.visible === false ? "opacity-50" : ""
                 } ${eventAnimation ? "theme-animate" : ""}`}
@@ -1198,6 +1423,17 @@ export default function AdminDashboard() {
                     </button>
 
                     <button
+                      onClick={() => {
+                        setCopyingProduct(p);
+                        setCopyTargetSub("");
+                      }}
+                      className="p-2 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-100 transition-colors"
+                      title="Duplicate Product"
+                    >
+                      📋
+                    </button>
+
+                    <button
                       onClick={() => handleDelete(p.id)}
                       className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
                       title="Delete Product"
@@ -1240,7 +1476,7 @@ export default function AdminDashboard() {
               rel="noopener noreferrer"
               className="text-[var(--brand-gold)] font-bold hover:underline"
             >
-              Temesgen Walelgn
+              Temesgen Walelgn[cite: 1]
             </a>
 
             <span className="text-gray-600">|</span>
@@ -1258,7 +1494,7 @@ export default function AdminDashboard() {
               </svg>
 
               <span className="text-xs font-semibold">
-                +251 993 370 491
+                +251 993 370 491[cite: 1]
               </span>
             </a>
 
