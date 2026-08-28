@@ -31,7 +31,13 @@
     --brand-gold: #e1ad3d;
     --brand-teal: #16866e;
     --soft-green: #fff8df;
-    --brand-bg: linear-gradient(135deg, #f7fff9, #fff9e8, #f1fbf5);
+
+    --brand-bg: linear-gradient(
+        135deg,
+        #f7fff9,
+        #fff9e8,
+        #f1fbf5
+    );
 
     --event-primary: #176b4d;
     --event-secondary: #e1ad3d;
@@ -46,7 +52,13 @@
     --brand-gold: #d84a6a;
     --brand-teal: #b92f52;
     --soft-green: #fff1f5;
-    --brand-bg: linear-gradient(135deg, #fff5f7, #ffe8ef, #ffffff);
+
+    --brand-bg: linear-gradient(
+        135deg,
+        #fff5f7,
+        #ffe8ef,
+        #ffffff
+    );
 
     --event-primary: #8e1736;
     --event-secondary: #d84a6a;
@@ -61,7 +73,13 @@
     --brand-gold: #d4a638;
     --brand-teal: #1b8158;
     --soft-green: #f0faf4;
-    --brand-bg: linear-gradient(135deg, #f3fbf5, #fff8e5, #fff3f3);
+
+    --brand-bg: linear-gradient(
+        135deg,
+        #f3fbf5,
+        #fff8e5,
+        #fff3f3
+    );
 
     --event-primary: #12613e;
     --event-secondary: #d4a638;
@@ -76,7 +94,13 @@
     --brand-gold: #d5aa45;
     --brand-teal: #168d73;
     --soft-green: #f1faf5;
-    --brand-bg: linear-gradient(135deg, #f1faf5, #fff9e8, #eef8f4);
+
+    --brand-bg: linear-gradient(
+        135deg,
+        #f1faf5,
+        #fff9e8,
+        #eef8f4
+    );
 
     --event-primary: #086b55;
     --event-secondary: #d5aa45;
@@ -91,7 +115,13 @@
     --brand-gold: #c9a447;
     --brand-teal: #3675a8;
     --soft-green: #eef5fb;
-    --brand-bg: linear-gradient(135deg, #f1f6fb, #eaf1f8, #fff9e9);
+
+    --brand-bg: linear-gradient(
+        135deg,
+        #f1f6fb,
+        #eaf1f8,
+        #fff9e9
+    );
 
     --event-primary: #183b63;
     --event-secondary: #c9a447;
@@ -106,7 +136,13 @@
     --brand-gold: #d5a45a;
     --brand-teal: #c44d7d;
     --soft-green: #fff2f7;
-    --brand-bg: linear-gradient(135deg, #fff5f8, #fff0f5, #fff9ed);
+
+    --brand-bg: linear-gradient(
+        135deg,
+        #fff5f8,
+        #fff0f5,
+        #fff9ed
+    );
 
     --event-primary: #a32f61;
     --event-secondary: #d5a45a;
@@ -120,10 +156,10 @@
    ===================================================== */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 /* =====================================================
@@ -131,10 +167,10 @@
    ===================================================== */
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
 }
 
 /* =====================================================
@@ -142,11 +178,11 @@
    ===================================================== */
 
 body {
-  margin: 0;
-  background: var(--brand-bg);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  transition: background 0.6s ease, color 0.4s ease;
+    margin: 0;
+    background: var(--brand-bg);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+    transition: background 0.6s ease, color 0.4s ease;
 }
 
 /* =====================================================
@@ -154,21 +190,22 @@ body {
    ===================================================== */
 
 .theme-page {
-  min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at 10% 10%,
-      var(--event-glow),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 90% 90%,
-      var(--event-glow),
-      transparent 25%
-    ),
-    var(--brand-bg);
+    min-height: 100vh;
 
-  transition: background 0.8s ease;
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            var(--event-glow),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 90% 90%,
+            var(--event-glow),
+            transparent 25%
+        ),
+        var(--brand-bg);
+
+    transition: background 0.8s ease;
 }
 
 /* =====================================================
@@ -176,27 +213,31 @@ body {
    ===================================================== */
 
 .theme-gradient {
-  background: linear-gradient(
-    135deg,
-    var(--event-primary),
-    var(--event-accent),
-    var(--event-secondary)
-  );
+    background: linear-gradient(
+        135deg,
+        var(--event-primary),
+        var(--event-accent),
+        var(--event-secondary)
+    );
 }
 
 .theme-button {
-  background: linear-gradient(
-    135deg,
-    var(--event-primary),
-    var(--event-accent)
-  );
-  color: white;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+    background: linear-gradient(
+        135deg,
+        var(--event-primary),
+        var(--event-accent)
+    );
+
+    color: white;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
 }
 
 .theme-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--event-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--event-glow);
 }
 
 /* =====================================================
@@ -204,15 +245,15 @@ body {
    ===================================================== */
 
 .theme-card {
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
 }
 
 .theme-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px var(--event-glow);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px var(--event-glow);
 }
 
 /* =====================================================
@@ -220,118 +261,172 @@ body {
    ===================================================== */
 
 @keyframes themeFade {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes themeGlow {
-  0%, 100% {
-    box-shadow: 0 0 8px var(--event-glow);
-  }
-
-  50% {
-    box-shadow: 0 0 25px var(--event-glow);
-  }
+    0%,
+    100% {
+        box-shadow: 0 0 8px var(--event-glow);
+    }
+    50% {
+        box-shadow: 0 0 25px var(--event-glow);
+    }
 }
 
 @keyframes themeFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-5px);
-  }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
 }
 
 @keyframes themeShine {
-  0% {
-    background-position: -200% center;
-  }
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
+    }
+}
 
-  100% {
-    background-position: 200% center;
-  }
+/* Custom Particle Keyframes */
+@keyframes particleFall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes particleSway {
+    0%, 100% {
+        margin-left: 0;
+    }
+    50% {
+        margin-left: 50px;
+    }
 }
 
 .theme-animate {
-  animation: themeFade 0.6s ease both;
+    animation: themeFade 0.6s ease both;
 }
 
 .theme-glow {
-  animation: themeGlow 3s ease-in-out infinite;
+    animation: themeGlow 3s ease-in-out infinite;
 }
 
 .theme-float {
-  animation: themeFloat 3s ease-in-out infinite;
+    animation: themeFloat 3s ease-in-out infinite;
 }
 
 .theme-shine {
-  background: linear-gradient(
-    110deg,
-    var(--event-primary) 35%,
-    var(--event-secondary) 50%,
-    var(--event-primary) 65%
-  );
-
-  background-size: 200% 100%;
-  animation: themeShine 4s linear infinite;
+    background: linear-gradient(
+        110deg,
+        var(--event-primary) 35%,
+        var(--event-secondary) 50%,
+        var(--event-primary) 65%
+    );
+    background-size: 200% 100%;
+    animation: themeShine 4s linear infinite;
 }
 
 /* =====================================================
-   OPTIONAL EVENT PARTICLES
+   DYNAMIC THEME PARTICLES (MULTIPLE EMOJIS)
    ===================================================== */
 
 .event-particles {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-  overflow: hidden;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
 }
 
-.event-particles::before,
-.event-particles::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.15;
-
-  background-image:
-    radial-gradient(
-      circle,
-      var(--event-secondary) 1px,
-      transparent 2px
-    ),
-    radial-gradient(
-      circle,
-      var(--event-primary) 1px,
-      transparent 2px
-    );
-
-  background-size: 55px 55px, 80px 80px;
-
-  animation: themeFloat 8s ease-in-out infinite;
+/* Base style for all falling spans */
+.event-particles span {
+    position: absolute;
+    top: -50px;
+    font-size: 24px;
+    opacity: 0;
+    animation: particleFall 8s linear infinite, particleSway 4s ease-in-out infinite alternate;
 }
+
+/* 🇪🇹 New Year (Adey Abeba) */
+.theme-newyear .event-particles span::after {
+    content: "🌼";
+    filter: drop-shadow(0 0 5px rgba(225, 173, 61, 0.4));
+}
+
+/* ❤️ Valentine's Day (Hearts) */
+.theme-valentine .event-particles span::after {
+    content: "❤️";
+    filter: drop-shadow(0 0 5px rgba(216, 74, 106, 0.4));
+}
+
+/* 🎄 Christmas (Snowflakes) */
+.theme-christmas .event-particles span::after {
+    content: "❄️";
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+}
+
+/* ☪️ Muslim Holy Days (Mix of Moons and Stars) */
+.theme-muslim .event-particles span::after {
+    content: "🌙";
+    color: #d5aa45;
+    filter: drop-shadow(0 0 5px rgba(213, 170, 69, 0.6));
+}
+.theme-muslim .event-particles span:nth-child(even)::after {
+    content: "⭐"; /* Every second emoji is a star */
+}
+
+/* Randomize horizontal positions, delays, and sizes for the 15 spans */
+.event-particles span:nth-child(1) { left: 5%; animation-delay: 0s, 0s; animation-duration: 20s, 4s; }
+.event-particles span:nth-child(2) { left: 15%; animation-delay: 2s, 1s; animation-duration: 15s, 3s; font-size: 18px; }
+.event-particles span:nth-child(3) { left: 25%; animation-delay: 4s, 2s; animation-duration: 10s, 5s; }
+.event-particles span:nth-child(4) { left: 35%; animation-delay: 1s, 3s; animation-duration: 8s, 4s; font-size: 20px; }
+.event-particles span:nth-child(5) { left: 45%; animation-delay: 5s, 0s; animation-duration: 11s, 6s; }
+.event-particles span:nth-child(6) { left: 55%; animation-delay: 3s, 1.5s; animation-duration: 9s, 4s; font-size: 32px; }
+.event-particles span:nth-child(7) { left: 65%; animation-delay: 0.5s, 2s; animation-duration: 7s, 3.5s; }
+.event-particles span:nth-child(8) { left: 75%; animation-delay: 2.5s, 0.5s; animation-duration: 10s, 4.5s; font-size: 22px; }
+.event-particles span:nth-child(9) { left: 85%; animation-delay: 4.5s, 1s; animation-duration: 8.5s, 5s; }
+.event-particles span:nth-child(10) { left: 95%; animation-delay: 1.5s, 2.5s; animation-duration: 9.5s, 4s; font-size: 30px; }
+.event-particles span:nth-child(11) { left: 10%; animation-delay: 6s, 1s; animation-duration: 8s, 3s; }
+.event-particles span:nth-child(12) { left: 30%; animation-delay: 7s, 2s; animation-duration: 9s, 5s; }
+.event-particles span:nth-child(13) { left: 50%; animation-delay: 3.5s, 0s; animation-duration: 7.5s, 4s; }
+.event-particles span:nth-child(14) { left: 70%; animation-delay: 5.5s, 1.5s; animation-duration: 10s, 5.5s; }
+.event-particles span:nth-child(15) { left: 90%; animation-delay: 0s, 2.5s; animation-duration: 8.5s, 3.5s; font-size: 26px; }
 
 /* =====================================================
    ACCESSIBILITY
    ===================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
 }

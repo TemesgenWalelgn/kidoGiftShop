@@ -12,7 +12,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// THIS IS CRUCIAL FOR MOBILE RESPONSIVENESS
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -20,7 +19,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "My Store",
+  title: "Kido Gifts & Flowers",
   description: "Beautiful gifts and flowers",
 };
 
@@ -29,11 +28,35 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeScript = `
+    try {
+      const cachedTheme = localStorage.getItem('kido_event_theme');
+      if (cachedTheme && cachedTheme !== 'none') {
+        document.documentElement.className += ' theme-' + cachedTheme;
+      }
+    } catch (e) {}
+  `;
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const cachedTheme = localStorage.getItem('kido_event_theme');
+                if (cachedTheme && cachedTheme !== 'none') {
+                  document.documentElement.className += ' theme-' + cachedTheme;
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
         <main className="flex-grow w-full">
           {children}

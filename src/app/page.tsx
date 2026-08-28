@@ -38,16 +38,25 @@ export default function UserPage() {
   const [tempSubs, setTempSubs] = useState<TempSubCategory[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // ===== EVENT THEME STATE =====
+  // ===== EVENT THEME STATE (Hydration-Safe) =====
   const [eventTheme, setEventTheme] = useState("none");
   const [eventEnabled, setEventEnabled] = useState(false);
   const [eventAnimation, setEventAnimation] = useState(true);
   const [eventParticles, setEventParticles] = useState(false);
 
+  // Sync cache immediately on client mount
+  useEffect(() => {
+    const cachedTheme = localStorage.getItem("kido_theme_name");
+    const cachedEnabled = localStorage.getItem("kido_theme_enabled");
+    if (cachedTheme) setEventTheme(cachedTheme);
+    if (cachedEnabled !== null) setEventEnabled(cachedEnabled === "true");
+  }, []);
+
   // ===== PACKAGE / SUBCATEGORY MANAGEMENT =====
   const [subCategoryOrder, setSubCategoryOrder] = useState<Record<string, string[]>>({});
-  const [sortOption, setSortOption] = useState("newest");
+  const [sortOption, setSortOption] = useState("priceLow");
 
   const translations = {
     am: {
@@ -224,7 +233,7 @@ export default function UserPage() {
     );
   }, []);
 
-  // ===== LOAD EVENT THEME IN REAL TIME =====
+  // ===== LOAD EVENT THEME IN REAL TIME (SYNC CACHE) =====
   useEffect(() => {
     return onSnapshot(
       doc(db, "settings", "eventTheme"),
@@ -243,6 +252,12 @@ export default function UserPage() {
         setEventEnabled(data.enabled === true);
         setEventAnimation(data.animation !== false);
         setEventParticles(data.particles === true);
+
+        // Keep local cache synced with Firebase to prevent flash
+        if (typeof window !== "undefined") {
+          localStorage.setItem("kido_theme_name", data.event || "none");
+          localStorage.setItem("kido_theme_enabled", data.enabled === true ? "true" : "false");
+        }
       },
       error => console.error("Event theme:", error)
     );
@@ -322,6 +337,7 @@ export default function UserPage() {
   }, [activeTab]);
 
   useEffect(() => {
+    setIsDataLoading(true);
     const q = query(
       collection(db, "products"),
       where("type", "==", activeTab)
@@ -345,6 +361,7 @@ export default function UserPage() {
         data = data.filter(p => p.subCategory === activeSub);
 
       setProducts(sortProductList(data));
+      setIsDataLoading(false);
     });
   }, [activeTab, activeSub, sortOption]);
 
@@ -392,6 +409,7 @@ export default function UserPage() {
 
   return (
     <div
+      suppressHydrationWarning
       className={`min-h-screen ${
         eventEnabled && eventTheme !== "none"
           ? `theme-${eventTheme}`
@@ -400,7 +418,12 @@ export default function UserPage() {
     >
 
       {eventEnabled && eventParticles && (
-        <div className="event-particles" />
+        <div className="event-particles">
+          {/* Renders 15 spans for 15 falling emojis */}
+          {[...Array(15)].map((_, i) => (
+            <span key={i}></span>
+          ))}
+        </div>
       )}
 
       <header className="bg-[var(--brand-light)] border-b border-gray-200 shadow-sm sticky top-0 z-40">
@@ -537,80 +560,98 @@ export default function UserPage() {
         </div>
 
         {/* 2 columns on mobile, 3 laptop, 4 desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+        {isDataLoading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <div key={n} className="bg-gray-100 rounded-2xl md:rounded-3xl p-4 aspect-[3/4] animate-pulse flex flex-col justify-between">
+                <div className="w-full aspect-square bg-gray-200 rounded-xl mb-3"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 font-medium">
+            No items found in this category.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
 
-          {products.map((p, index) => {
+            {products.map((p, index) => {
 
-            const title =
-              p.type === "flower"
-                ? "Flower"
-                : "Package";
+              const title =
+                p.type === "flower"
+                  ? "Flower"
+                  : "Package";
 
-            return (
-
-              <div
-                key={`${p.id}-${index}`}
-                className={`theme-card bg-[var(--brand-light)] rounded-2xl md:rounded-3xl p-2 sm:p-3 md:p-4 shadow-sm border border-gray-100 flex flex-col h-full min-w-0 hover:shadow-md transition-shadow ${
-                  eventAnimation ? "theme-animate" : ""
-                }`}
-              >
+              return (
 
                 <div
-                  onClick={() => setSelectedProduct(p)}
-                  className="w-full aspect-square overflow-hidden rounded-xl md:rounded-2xl cursor-pointer group"
+                  key={`${p.id}-${index}`}
+                  className={`theme-card bg-[var(--brand-light)] rounded-2xl md:rounded-3xl p-2 sm:p-3 md:p-4 shadow-sm border border-gray-100 flex flex-col h-full min-w-0 hover:shadow-md transition-shadow ${
+                    eventAnimation ? "theme-animate" : ""
+                  }`}
                 >
 
-                  <img
-                    src={p.images[0]}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    alt={`${title} ${index + 1}`}
-                  />
+                  <div
+                    onClick={() => setSelectedProduct(p)}
+                    className="w-full aspect-square overflow-hidden rounded-xl md:rounded-2xl cursor-pointer group"
+                  >
 
-                </div>
-
-                <div className="flex flex-col flex-1 pt-3 px-1">
-
-                  <div>
-
-                    <div className="inline-block bg-gray-100 px-2 py-0.5 rounded-md mb-1.5">
-
-                      <span className="text-[8px] sm:text-[10px] font-black text-gray-600 uppercase">
-                        {title} {index + 1}
-                      </span>
-
-                    </div>
-
-                    <p className="text-sm sm:text-base md:text-xl font-black text-[var(--event-primary)] mb-1.5">
-                      {Number(p.price).toLocaleString()} ETB
-                    </p>
-
-                    <p className="text-[9px] sm:text-[10px] md:text-sm text-gray-500 leading-relaxed line-clamp-3 min-h-[45px] md:min-h-[60px]">
-                      Includes: {p.description[lang]}
-                    </p>
+                    <img
+                      src={p.images[0]}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      alt={`${title} ${index + 1}`}
+                    />
 
                   </div>
 
-                  <button
-                    onClick={() => handleOrder(p, index)}
-                    disabled={loadingId === p.id}
-                    className={`w-full mt-auto py-2 sm:py-2.5 md:py-3 text-[9px] sm:text-xs md:text-sm font-extrabold rounded-lg md:rounded-xl transition-all shadow-lg ${
-                      loadingId === p.id
-                        ? "bg-amber-500 text-white"
-                        : "bg-[var(--event-primary)] text-white hover:opacity-95"
-                    }`}
-                  >
-                    {loadingId === p.id
-                      ? translations[lang].orderSuccess
-                      : translations[lang].orderButton}
-                  </button>
+                  <div className="flex flex-col flex-1 pt-3 px-1">
+
+                    <div>
+
+                      <div className="inline-block bg-gray-100 px-2 py-0.5 rounded-md mb-1.5">
+
+                        <span className="text-[8px] sm:text-[10px] font-black text-gray-600 uppercase">
+                          {title} {index + 1}
+                        </span>
+
+                      </div>
+
+                      <p className="text-sm sm:text-base md:text-xl font-black text-[var(--event-primary)] mb-1.5">
+                        {Number(p.price).toLocaleString()} ETB
+                      </p>
+
+                      <p className="text-[9px] sm:text-[10px] md:text-sm text-gray-500 leading-relaxed line-clamp-3 min-h-[45px] md:min-h-[60px]">
+                        Includes: {p.description[lang]}
+                      </p>
+
+                    </div>
+
+                    <button
+                      onClick={() => handleOrder(p, index)}
+                      disabled={loadingId === p.id}
+                      className={`w-full mt-auto py-2 sm:py-2.5 md:py-3 text-[9px] sm:text-xs md:text-sm font-extrabold rounded-lg md:rounded-xl transition-all shadow-lg ${
+                        loadingId === p.id
+                          ? "bg-amber-500 text-white"
+                          : "bg-[var(--event-primary)] text-white hover:opacity-95"
+                      }`}
+                    >
+                      {loadingId === p.id
+                        ? translations[lang].orderSuccess
+                        : translations[lang].orderButton}
+                    </button>
+
+                  </div>
 
                 </div>
+              );
+            })}
 
-              </div>
-            );
-          })}
-
-        </div>
+          </div>
+        )}
 
       </main>
 

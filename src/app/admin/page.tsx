@@ -52,13 +52,21 @@ export default function AdminDashboard() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [editingTempId, setEditingTempId] = useState<string | null>(null);
 
-  // ===== EVENT THEME STATE =====
+  // ===== EVENT THEME STATE (Hydration-Safe) =====
   const [eventTheme, setEventTheme] = useState("none");
   const [eventEnabled, setEventEnabled] = useState(false);
   const [eventAnimation, setEventAnimation] = useState(true);
   const [eventParticles, setEventParticles] = useState(false);
   const [savingEventTheme, setSavingEventTheme] = useState(false);
   const [showEventPanel, setShowEventPanel] = useState(false);
+
+  // Sync cache immediately on client mount
+  useEffect(() => {
+    const cachedTheme = localStorage.getItem("kido_theme_name");
+    const cachedEnabled = localStorage.getItem("kido_theme_enabled");
+    if (cachedTheme) setEventTheme(cachedTheme);
+    if (cachedEnabled !== null) setEventEnabled(cachedEnabled === "true");
+  }, []);
 
   // ===== PACKAGE / SUBCATEGORY MANAGEMENT =====
   const [subCategoryOrder, setSubCategoryOrder] = useState<Record<string, string[]>>({});
@@ -112,7 +120,7 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, []);
 
-  // ===== LISTEN TO EVENT THEME =====
+  // ===== LISTEN TO EVENT THEME (SYNC CACHE) =====
   useEffect(() => {
     const unsubscribe = onSnapshot(
       doc(db, "settings", "eventTheme"),
@@ -131,6 +139,12 @@ export default function AdminDashboard() {
         setEventEnabled(data.enabled === true);
         setEventAnimation(data.animation !== false);
         setEventParticles(data.particles === true);
+
+        // Keep local cache synced with Firebase
+        if (typeof window !== "undefined") {
+          localStorage.setItem("kido_theme_name", data.event || "none");
+          localStorage.setItem("kido_theme_enabled", data.enabled === true ? "true" : "false");
+        }
       },
       (error) => {
         console.error("Error loading event theme:", error);
@@ -322,6 +336,12 @@ export default function AdminDashboard() {
         particles: eventParticles
       });
 
+      // Save locally to instantly cache the theme on refreshes
+      if (typeof window !== "undefined") {
+        localStorage.setItem("kido_theme_name", eventTheme);
+        localStorage.setItem("kido_theme_enabled", eventEnabled ? "true" : "false");
+      }
+
       alert("Event theme saved successfully!");
     } catch (error) {
       console.error("Error saving event theme:", error);
@@ -330,7 +350,7 @@ export default function AdminDashboard() {
       setSavingEventTheme(false);
     }
   };
-
+  
   const resetTempForm = () => {
     setEditingTempId(null);
     setTempForm({
@@ -526,6 +546,7 @@ export default function AdminDashboard() {
 
   return (
     <div
+      suppressHydrationWarning
       className={`min-h-screen ${
         eventEnabled && eventTheme !== "none"
           ? `theme-${eventTheme}`
@@ -533,9 +554,14 @@ export default function AdminDashboard() {
       } theme-page flex flex-col justify-between`}
     >
       {eventEnabled && eventParticles && (
-        <div className="event-particles" />
+        <div className="event-particles">
+          {/* Renders 15 spans for 15 falling emojis */}
+          {[...Array(15)].map((_, i) => (
+            <span key={i}></span>
+          ))}
+        </div>
       )}
-
+      
       {/* ===== CLASSIC HEADER ===== */}
       <header className="bg-[var(--brand-light)] border-b border-gray-200 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-10 h-16 md:h-20 flex items-center justify-between">
@@ -546,7 +572,7 @@ export default function AdminDashboard() {
             </span>
 
             <span className="text-[10px] md:text-xs text-gray-500 font-medium hidden sm:block">
-              Kido Gifts & Flower Shop Management[cite: 1]
+              Kido Gifts & Flower Shop Management
             </span>
           </div>
 
@@ -718,7 +744,7 @@ export default function AdminDashboard() {
                   ? "Saving..."
                   : "Save Event Theme"}
               </button>
-
+                  
             </div>
           </div>
         </div>
@@ -1476,7 +1502,7 @@ export default function AdminDashboard() {
               rel="noopener noreferrer"
               className="text-[var(--brand-gold)] font-bold hover:underline"
             >
-              Temesgen Walelgn[cite: 1]
+              Temesgen Walelgn
             </a>
 
             <span className="text-gray-600">|</span>
@@ -1494,7 +1520,7 @@ export default function AdminDashboard() {
               </svg>
 
               <span className="text-xs font-semibold">
-                +251 993 370 491[cite: 1]
+                +251 993 370 491
               </span>
             </a>
 
