@@ -34,6 +34,10 @@ export default function UserPage() {
   const [lang, setLang] = useState<"am" | "en" | "om">("am");
   const [activeTab, setActiveTab] = useState("surprise");
   const [activeSub, setActiveSub] = useState("all");
+  
+  // Track if the user manually clicked a subcategory
+  const [userManuallySelected, setUserManuallySelected] = useState(false);
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [tempSubs, setTempSubs] = useState<TempSubCategory[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -332,9 +336,25 @@ export default function UserPage() {
     return (translations[lang].subs as any)[activeTab][sub];
   };
 
+  // Reset manual selection when the main tab changes
   useEffect(() => {
-    setActiveSub("all");
+    setUserManuallySelected(false);
   }, [activeTab]);
+
+  // Set the default subcategory to the FIRST item in the admin's sorted list
+  useEffect(() => {
+    if (!userManuallySelected) {
+      const orderedSubs = getSubCategoriesForTab(activeTab);
+      if (orderedSubs.length > 0) {
+        // If "all" is the first item, skip it and select the next subcategory as the default
+        if (orderedSubs[0] === "all" && orderedSubs.length > 1) {
+          setActiveSub(orderedSubs[1]);
+        } else {
+          setActiveSub(orderedSubs[0]);
+        }
+      }
+    }
+  }, [activeTab, subCategoryOrder, tempSubs, userManuallySelected]);
 
   useEffect(() => {
     setIsDataLoading(true);
@@ -419,7 +439,7 @@ export default function UserPage() {
 
       {eventEnabled && eventParticles && (
         <div className="event-particles">
-          {/* Renders 15 spans for 15 falling emojis */}
+          {/* This loop creates 15 falling emojis */}
           {[...Array(15)].map((_, i) => (
             <span key={i}></span>
           ))}
@@ -524,7 +544,10 @@ export default function UserPage() {
 
             <button
               key={`${sub}-${index}`}
-              onClick={() => setActiveSub(sub)}
+              onClick={() => {
+                setActiveSub(sub);
+                setUserManuallySelected(true); // Stop auto-switching if the user clicked one
+              }}
               className={`px-4 py-1.5 rounded-xl text-xs md:text-sm font-semibold ${
                 activeSub === sub
                   ? "bg-[var(--text-dark)] text-white shadow-md"
@@ -538,7 +561,7 @@ export default function UserPage() {
 
         </div>
 
-        {/* Sorting Menu Added Directly Above the Card List with Sorting Icon */}
+        {/* Sorting Menu */}
         <div className="flex justify-end items-center mb-6 px-1">
           <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-2 rounded-xl shadow-sm">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
