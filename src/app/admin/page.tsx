@@ -297,7 +297,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Destructure and separate the old 'id' so it doesn't get saved into the new document reference
       const { id, ...productWithoutId } = copyingProduct;
 
       await addDoc(collection(db, "products"), {
@@ -306,8 +305,6 @@ export default function AdminDashboard() {
         subCategory: copyTargetSub,
         createdAt: serverTimestamp()
       });
-
-      alert("Package duplicated successfully!");
 
       const destinationTab = targetTabType;
       const destinationSub = copyTargetSub;
@@ -336,13 +333,11 @@ export default function AdminDashboard() {
         particles: eventParticles
       });
 
-      // Save locally to instantly cache the theme on refreshes
       if (typeof window !== "undefined") {
         localStorage.setItem("kido_theme_name", eventTheme);
         localStorage.setItem("kido_theme_enabled", eventEnabled ? "true" : "false");
       }
 
-      alert("Event theme saved successfully!");
     } catch (error) {
       console.error("Error saving event theme:", error);
       alert("Failed to save event theme.");
@@ -390,8 +385,6 @@ export default function AdminDashboard() {
           enabled: tempForm.enabled,
           name: tempForm.name
         });
-
-        alert("Temporary subcategory updated successfully!");
       } else {
         const sameType = tempSubCategories.filter(
           (item) => item.type === tempForm.type
@@ -409,8 +402,6 @@ export default function AdminDashboard() {
           name: tempForm.name,
           createdAt: serverTimestamp()
         });
-
-        alert("Temporary subcategory created successfully!");
       }
 
       resetTempForm();
@@ -519,10 +510,16 @@ export default function AdminDashboard() {
     }));
   };
 
+  // Fixed the Delete Function
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      await deleteDoc(doc(db, "products", id));
-      fetchProducts();
+      try {
+        await deleteDoc(doc(db, "products", id));
+        fetchProducts();
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert("Failed to delete product. Please check your connection.");
+      }
     }
   };
 
@@ -555,13 +552,13 @@ export default function AdminDashboard() {
     >
       {eventEnabled && eventParticles && (
         <div className="event-particles">
-          {/* Renders 15 spans for 15 falling emojis */}
+          {/* This loop creates 15 falling emojis */}
           {[...Array(15)].map((_, i) => (
             <span key={i}></span>
           ))}
         </div>
       )}
-      
+
       {/* ===== CLASSIC HEADER ===== */}
       <header className="bg-[var(--brand-light)] border-b border-gray-200 shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-10 h-16 md:h-20 flex items-center justify-between">
