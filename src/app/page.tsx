@@ -71,6 +71,7 @@ export default function UserPage() {
       orderButton: "አሁኑኑ ይዘዙ",
       orderSuccess: "ትዕዛዝ ተልኳል! ✅",
       footerContact: "እኛን ለማግኘት",
+      location: "ኪዶ ስጦታ ሱቅ ሐረር፣ ኢትዮጵያ",
       footerRights: "መብቱ በህግ የተጠበቀ ነው።",
       tabs: {
         surprise: "የሰርፕራይዝ ጥቅል",
@@ -122,6 +123,7 @@ export default function UserPage() {
       orderButton: "Order Now",
       orderSuccess: "Order Sent! ✅",
       footerContact: "Contact Us",
+      location: "kido gift shop Harar, Ethiopia",
       footerRights: "All rights reserved.",
       tabs: {
         surprise: "Surprise pkg",
@@ -173,6 +175,7 @@ export default function UserPage() {
       orderButton: "Ajajaa",
       orderSuccess: "Ajajni Ergame! ✅",
       footerContact: "Nu Quunnamaa",
+      location: "kido gift shop Harar, Itoophiyaa",
       footerRights: "Mirgi hunduu eegamaadha.",
       tabs: {
         surprise: "surprisee",
@@ -388,8 +391,7 @@ export default function UserPage() {
   const handleOrder = (p: Product, index: number) => {
     setLoadingId(p.id);
 
-    const titlePrefix =
-      p.type === "flower" ? "Flower" : "Package";
+    const titlePrefix = p.type === "flower" ? "FLW" : "PKG";
 
     const temp = tempSubs.find(
       x => x.id === p.subCategory
@@ -546,7 +548,7 @@ export default function UserPage() {
               key={`${sub}-${index}`}
               onClick={() => {
                 setActiveSub(sub);
-                setUserManuallySelected(true); // Stop auto-switching if the user clicked one
+                setUserManuallySelected(true); 
               }}
               className={`px-4 py-1.5 rounded-xl text-xs md:text-sm font-semibold ${
                 activeSub === sub
@@ -604,10 +606,7 @@ export default function UserPage() {
 
             {products.map((p, index) => {
 
-              const title =
-                p.type === "flower"
-                  ? "Flower"
-                  : "Package";
+              const title = p.type === "flower" ? "FLW" : "PKG";
 
               return (
 
@@ -620,43 +619,44 @@ export default function UserPage() {
 
                   <div
                     onClick={() => setSelectedProduct(p)}
-                    className="w-full aspect-square overflow-hidden rounded-xl md:rounded-2xl cursor-pointer group"
+                    className="w-full aspect-square overflow-hidden rounded-xl md:rounded-2xl cursor-pointer group relative"
                   >
-
                     <img
                       src={p.images[0]}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       alt={`${title} ${index + 1}`}
                     />
-
+                    
+                    {/* Floating Label (PKG / FLW) overlay exactly like Admin page */}
+                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md z-10">
+                      <span className="text-[10px] sm:text-xs text-white font-bold uppercase tracking-wider">
+                        {title} {index + 1}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex flex-col flex-1 pt-3 px-1">
-
                     <div>
-
-                      <div className="inline-block bg-gray-100 px-2 py-0.5 rounded-md mb-1.5">
-
-                        <span className="text-[8px] sm:text-[10px] font-black text-gray-600 uppercase">
-                          {title} {index + 1}
+                      {/* Price moved to the left and made prominent */}
+                      <div className="mb-1.5">
+                        <span className="text-base sm:text-lg md:text-xl font-black text-[var(--event-primary)] block">
+                          {Number(p.price).toLocaleString()} ETB
                         </span>
-
                       </div>
 
-                      <p className="text-sm sm:text-base md:text-xl font-black text-[var(--event-primary)] mb-1.5">
-                        {Number(p.price).toLocaleString()} ETB
+                      <p 
+                        onClick={() => setSelectedProduct(p)}
+                        className="text-[11px] sm:text-xs md:text-sm text-gray-600 leading-relaxed line-clamp-3 min-h-[50px] cursor-pointer hover:text-gray-900 transition-colors"
+                        title="Click to read full description"
+                      >
+                        {p.description[lang]}
                       </p>
-
-                      <p className="text-[9px] sm:text-[10px] md:text-sm text-gray-500 leading-relaxed line-clamp-3 min-h-[45px] md:min-h-[60px]">
-                        Includes: {p.description[lang]}
-                      </p>
-
                     </div>
 
                     <button
                       onClick={() => handleOrder(p, index)}
                       disabled={loadingId === p.id}
-                      className={`w-full mt-auto py-2 sm:py-2.5 md:py-3 text-[9px] sm:text-xs md:text-sm font-extrabold rounded-lg md:rounded-xl transition-all shadow-lg ${
+                      className={`w-full mt-4 py-2 sm:py-2.5 md:py-3 text-[9px] sm:text-xs md:text-sm font-extrabold rounded-lg md:rounded-xl transition-all shadow-lg ${
                         loadingId === p.id
                           ? "bg-amber-500 text-white"
                           : "bg-[var(--event-primary)] text-white hover:opacity-95"
@@ -683,110 +683,88 @@ export default function UserPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
 
           <div className="text-center md:text-left">
-
             <h3 className="text-lg font-bold text-[var(--brand-gold)] mb-2">
               {translations[lang].brandName}
             </h3>
-
             <p className="text-xs md:text-sm text-gray-400 max-w-md mb-4">
               {translations[lang].footerAbout}
             </p>
 
+            {/* Social Icons Updated to SVG */}
             <div className="flex justify-center md:justify-start gap-4">
-
-              <a
-                href="https://tiktok.com/@kido.surprise.delivery"
-                target="_blank"
-                className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center"
-              >
-                ♪
+              <a href="https://tiktok.com/@kido.surprise.delivery" target="_blank" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[var(--brand-gold)] transition-colors">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                </svg>
               </a>
-
-              <a
-                href="https://instagram.com/kido122227"
-                target="_blank"
-                className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center"
-              >
-                ◎
+              <a href="https://instagram.com/kido122227" target="_blank" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[var(--brand-gold)] transition-colors">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                </svg>
               </a>
-
-              <a
-                href="https://t.me/kidodelivery"
-                target="_blank"
-                className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center"
-              >
-                ➤
+              <a href="https://t.me/kidodelivery" target="_blank" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-[var(--brand-gold)] transition-colors">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.686c.223-.195-.054-.285-.346-.096l-6.405 4.026-2.76-.86c-.6-.188-.615-.6.128-.89l10.816-4.167c.5-.188.943.116.807.905z"/>
+                </svg>
               </a>
-
             </div>
 
-            <p className="text-xs md:text-sm text-gray-300 mt-4">
-              {translations[lang].footerContact}:{" "}
-
-              <a
-                href="tel:+251951161632"
-                className="underline"
+            {/* Contact & Location (Updated Map Link) */}
+            <div className="text-xs md:text-sm text-gray-300 mt-5 space-y-2">
+              <p className="flex items-center justify-center md:justify-start gap-2">
+                <svg className="w-4 h-4 text-[var(--brand-gold)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                </svg>
+                {translations[lang].footerContact}: <a href="tel:+251951161632" className="hover:text-white underline">+251 951 161 632</a>
+              </p>
+              <a 
+                href="https://www.google.com/maps/search/?api=1&query=Kido+gift+shop+harar" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center justify-center md:justify-start gap-2 hover:text-[var(--brand-gold)] transition-colors"
               >
-                +251 951 161 632
+                <svg className="w-4 h-4 text-[var(--brand-gold)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+                {translations[lang].location}
               </a>
-            </p>
+            </div>
 
           </div>
 
           <div className="text-center md:text-right text-xs text-gray-400">
-
             <p className="mb-3">
-
-              Developed by{" "}
-
-              <a
-                href="https://t.me/temesgenwalelign"
-                target="_blank"
-                className="text-[var(--brand-gold)] font-bold"
-              >
-                Temesgen Walelgn
-              </a>
-
-              {" | "}
-
-              <a href="tel:+251993370491">
-                +251 993 370 491
-              </a>
-
+              Developed by <a href="https://t.me/temesgenwalelign" target="_blank" className="text-[var(--brand-gold)] font-bold">Temesgen Walelgn</a> {" | "} <a href="tel:+251993370491">+251 993 370 491</a>
             </p>
-
-            <p>
-              © {new Date().getFullYear()}{" "}
-              {translations[lang].brandName}.{" "}
-              {translations[lang].footerRights}
-            </p>
-
+            <p>© {new Date().getFullYear()} {translations[lang].brandName}. {translations[lang].footerRights}</p>
           </div>
 
         </div>
 
       </footer>
 
+      {/* NEW PROFESSIONAL GALLERY POP-UP */}
       {selectedProduct && (
 
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-6"
           onClick={() => setSelectedProduct(null)}
         >
 
           <div
-            className="relative w-full max-w-lg"
+            className="relative w-full max-w-5xl bg-[var(--brand-light)] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
             onClick={e => e.stopPropagation()}
           >
 
-            <button
-              onClick={() => setSelectedProduct(null)}
-              className="absolute -top-10 right-0 text-white font-bold"
-            >
-              Close ✕
-            </button>
-
-            <GalleryView product={selectedProduct} />
+            <GalleryView 
+              product={selectedProduct} 
+              lang={lang} 
+              onClose={() => setSelectedProduct(null)}
+              onOrder={() => handleOrder(selectedProduct, products.findIndex(p => p.id === selectedProduct.id))}
+              orderText={translations[lang].orderButton}
+              successText={translations[lang].orderSuccess}
+              isOrdering={loadingId === selectedProduct.id}
+            />
 
           </div>
 
@@ -798,44 +776,111 @@ export default function UserPage() {
   );
 }
 
-function GalleryView({ product }: { product: Product }) {
-
+// REDESIGNED GALLERY VIEW COMPONENT
+function GalleryView({ 
+  product, 
+  lang, 
+  onClose, 
+  onOrder, 
+  orderText, 
+  successText, 
+  isOrdering 
+}: { 
+  product: Product; 
+  lang: "am" | "en" | "om"; 
+  onClose: () => void; 
+  onOrder: () => void; 
+  orderText: string; 
+  successText: string; 
+  isOrdering: boolean;
+}) {
   const [main, setMain] = useState(product.images[0]);
 
+  // If product changes, reset main image
+  useEffect(() => {
+    setMain(product.images[0]);
+  }, [product]);
+
+  const titlePrefix = product.type === "flower" ? "Flower Setup" : "Surprise Package";
+
   return (
+    <>
+      {/* Absolute Close Button inside the card */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold transition-colors z-10"
+      >
+        ✕
+      </button>
 
-    <div className="flex flex-col gap-3">
+      {/* LEFT SIDE: Image Gallery */}
+      <div className="w-full md:w-1/2 flex flex-col bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100">
+        
+        {/* Main Image Space */}
+        <div className="w-full h-[40vh] md:h-[60vh] relative flex items-center justify-center p-4 md:p-8">
+          <img
+            src={main}
+            className="w-full h-full object-contain drop-shadow-md"
+            alt="Product view"
+          />
+        </div>
 
-      <img
-        src={main}
-        className="w-full aspect-square object-cover rounded-2xl shadow-2xl"
-      />
-
-      <div className="flex gap-2 justify-center overflow-x-auto">
-
-        {product.images.map((img, i) => (
-
-          <button
-            key={`${img}-${i}`}
-            onClick={() => setMain(img)}
-            className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
-              main === img
-                ? "border-[var(--event-primary)]"
-                : "border-transparent"
-            }`}
-          >
-
-            <img
-              src={img}
-              className="w-full h-full object-cover"
-            />
-
-          </button>
-
-        ))}
+        {/* Thumbnail Selector (Only shows if > 1 image) */}
+        {product.images.length > 1 && (
+          <div className="flex gap-3 justify-center overflow-x-auto p-4 bg-white/50 backdrop-blur-sm border-t border-gray-100">
+            {product.images.map((img, i) => (
+              <button
+                key={`${img}-${i}`}
+                onClick={() => setMain(img)}
+                className={`w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${
+                  main === img
+                    ? "border-[var(--event-primary)] scale-105 shadow-md"
+                    : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"
+                }`}
+              >
+                <img src={img} className="w-full h-full object-cover" alt={`Thumbnail ${i + 1}`} />
+              </button>
+            ))}
+          </div>
+        )}
 
       </div>
 
-    </div>
+      {/* RIGHT SIDE: Text & Order Button */}
+      <div className="w-full md:w-1/2 flex flex-col p-6 md:p-8 lg:p-10 max-h-[50vh] md:max-h-none overflow-y-auto">
+        
+        <div className="mb-6 pr-8">
+          <span className="inline-block px-3 py-1 bg-gray-100 text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest rounded-md mb-3">
+            {titlePrefix}
+          </span>
+          <h2 className="text-3xl md:text-4xl font-black text-[var(--event-primary)] tracking-tight">
+            {Number(product.price).toLocaleString()} ETB
+          </h2>
+        </div>
+
+        <div className="flex-1 mb-8">
+          <h3 className="text-sm font-bold text-gray-900 mb-2">Package Includes:</h3>
+          <p className="text-sm md:text-base text-gray-600 leading-relaxed whitespace-pre-wrap">
+            {product.description[lang] || product.description.en || product.description.am}
+          </p>
+        </div>
+
+        {/* Action Area locked to bottom */}
+        <div className="mt-auto pt-6 border-t border-gray-100">
+          <button
+            onClick={onOrder}
+            disabled={isOrdering}
+            className={`w-full py-3.5 md:py-4 text-sm md:text-base font-extrabold rounded-xl shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 ${
+              isOrdering
+                ? "bg-amber-500 text-white"
+                : "bg-[var(--event-primary)] text-white hover:opacity-95"
+            }`}
+          >
+            {isOrdering ? successText : orderText}
+          </button>
+        </div>
+
+      </div>
+    </>
   );
 }
