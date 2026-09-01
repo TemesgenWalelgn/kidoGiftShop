@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase"; // Added auth
+import { onAuthStateChanged, signOut } from "firebase/auth"; // Added Firebase Auth functions
+import { useRouter } from "next/navigation"; // Added router for redirects
 import {
   collection,
   getDocs,
@@ -40,6 +42,9 @@ interface TempSubCategory {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const [activeTab, setActiveTab] = useState("surprise");
   const [activeSub, setActiveSub] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
@@ -59,6 +64,18 @@ export default function AdminDashboard() {
   const [eventParticles, setEventParticles] = useState(false);
   const [savingEventTheme, setSavingEventTheme] = useState(false);
   const [showEventPanel, setShowEventPanel] = useState(false);
+
+  // ===== AUTHENTICATION CHECK =====
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true);
+      } else {
+        router.push("/admin/login");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   // Sync cache immediately on client mount
   useEffect(() => {
@@ -94,6 +111,7 @@ export default function AdminDashboard() {
 
   // Listen to temporary subcategories in real time
   useEffect(() => {
+    if (!isAuthenticated) return; // Wait until authenticated
     const q = query(collection(db, "temporarySubCategories"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -118,10 +136,11 @@ export default function AdminDashboard() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   // ===== LISTEN TO EVENT THEME (SYNC CACHE) =====
   useEffect(() => {
+    if (!isAuthenticated) return;
     const unsubscribe = onSnapshot(
       doc(db, "settings", "eventTheme"),
       (snapshot) => {
@@ -152,10 +171,11 @@ export default function AdminDashboard() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   // ===== LOAD SUBCATEGORY ORDER =====
   useEffect(() => {
+    if (!isAuthenticated) return;
     return onSnapshot(
       doc(db, "settings", "subCategoryOrder"),
       (snapshot) => {
@@ -165,7 +185,7 @@ export default function AdminDashboard() {
       },
       (error) => console.error("Error loading subcategory order:", error)
     );
-  }, []);
+  }, [isAuthenticated]);
 
   const getDefaultSubCategories = (tab: string) => {
     if (tab === "flower") {
@@ -467,9 +487,10 @@ export default function AdminDashboard() {
   }, [tempSubCategories, activeSub]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     setProduct((prev) => ({ ...prev, type: activeTab }));
     fetchProducts();
-  }, [activeTab, activeSub]);
+  }, [activeTab, activeSub, isAuthenticated]);
 
   useEffect(() => {
     setProducts((prev) => sortProductList(prev));
@@ -510,7 +531,6 @@ export default function AdminDashboard() {
     }));
   };
 
-  // Fixed the Delete Function
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
@@ -540,6 +560,15 @@ export default function AdminDashboard() {
     setEditingId(p.id);
     setIsAdding(true);
   };
+
+  // Prevent rendering the dashboard interface until auth check clears
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--brand-bg)]">
+        <div className="animate-pulse text-[var(--brand-green)] font-bold text-lg">Verifying Access...</div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -618,6 +647,14 @@ export default function AdminDashboard() {
                 Back to Dashboard
               </button>
             )}
+
+            {/* Logout Button */}
+            <button
+              onClick={() => signOut(auth)}
+              className="px-4 py-2 bg-red-50 text-red-600 text-xs md:text-sm font-bold rounded-full hover:bg-red-100 transition-all ml-1 md:ml-2"
+            >
+              Logout
+            </button>
 
           </div>
         </div>
@@ -1489,43 +1526,48 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <p className="text-xs text-gray-400 mb-3 flex items-center justify-center md:justify-end gap-1.5">
+          <div className="text-xs text-gray-400 flex flex-col items-center md:items-end gap-1.5">
 
-            Developed by{" "}
-
-            <a
-              href="https://t.me/temesgenwalelign"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[var(--brand-gold)] font-bold hover:underline"
-            >
-              Temesgen Walelgn
-            </a>
-
-            <span className="text-gray-600">|</span>
-
-            <a
-              href="tel:+251993370491"
-              className="inline-flex items-center gap-1 text-gray-300 hover:text-[var(--brand-gold)] transition-colors"
-              title="Call Developer"
-            >
-              <svg
-                className="w-3.5 h-3.5 fill-current text-[var(--brand-gold)]"
-                viewBox="0 0 24 24"
+            <p className="flex items-center justify-center md:justify-end gap-1.5">
+              Developed by{" "}
+              <a
+                href="https://t.me/temesgenwalelign"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--brand-gold)] font-bold hover:underline"
               >
-                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-              </svg>
+                Temesgen Walelgn
+              </a>
+              <span className="text-gray-600">|</span>
+              <a
+                href="tel:+251993370491"
+                className="inline-flex items-center gap-1 text-gray-300 hover:text-[var(--brand-gold)] transition-colors"
+                title="Call Developer"
+              >
+                <svg className="w-3.5 h-3.5 fill-current text-[var(--brand-gold)]" viewBox="0 0 24 24">
+                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                </svg>
+                <span className="font-semibold">+251 993 370 491</span>
+              </a>
+            </p>
 
-              <span className="text-xs font-semibold">
-                +251 993 370 491
-              </span>
+            <a 
+              href="https://www.google.com/maps/search/?api=1&query=Kido+gift+shop+harar" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-1.5 mt-1 hover:text-[var(--brand-gold)] transition-colors"
+            >
+              <svg className="w-3.5 h-3.5 text-[var(--brand-gold)]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              Harar, Ethiopia
             </a>
 
-          </p>
+            <p className="text-gray-500 mt-2">
+              © {new Date().getFullYear()} Kido Gifts & Flowers. All rights reserved.
+            </p>
 
-          <p className="text-xs text-gray-500">
-            © {new Date().getFullYear()} Kido Gifts & Flowers. All rights reserved.
-          </p>
+          </div>
 
         </div>
       </footer>

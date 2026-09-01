@@ -8,49 +8,79 @@ import { useRouter } from "next/navigation";
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    // Wait a brief moment for the auth state to sync with the browser
-    setTimeout(() => {
-      router.push("/admin");
-    }, 500); 
-  } catch (error) {
-    alert("Invalid email or password");
-    console.log(error);
-  }
-};
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/admin"); // Redirect to dashboard on success
+    } catch (err) {
+      setError("Invalid email or password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form
-        onSubmit={handleLogin}
-        className="p-6 border rounded w-80 flex flex-col gap-4"
-      >
-        <h1 className="text-xl font-bold">Admin Login</h1>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--brand-bg)] p-4">
+      <div className="bg-white max-w-md w-full rounded-3xl shadow-xl p-8 border border-gray-100">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-black text-[var(--brand-green)]">
+            KIDO Admin
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Secure portal access
+          </p>
+        </div>
 
-        <input
-          className="border p-2"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <form onSubmit={handleLogin} className="space-y-5">
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl text-center">
+              {error}
+            </div>
+          )}
 
-        <input
-          className="border p-2"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none focus:border-[var(--brand-green)] text-sm"
+              required
+            />
+          </div>
 
-        <button className="bg-blue-600 text-white p-2">
-          Login
-        </button>
-      </form>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none focus:border-[var(--brand-green)] text-sm"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-[var(--brand-green)] text-white rounded-xl font-bold shadow-md hover:opacity-95 transition-all mt-4"
+          >
+            {loading ? "Verifying..." : "Secure Login"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
